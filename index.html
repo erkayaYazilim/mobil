@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Soru Yükleme Paneli</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 4px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background: #218838;
+        }
+        .message {
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Soru Yükleme Paneli</h1>
+        <form id="questionForm">
+            <label for="questionText">Soru Metni:</label>
+            <textarea id="questionText" required></textarea>
+            
+            <label for="option1">Şık 1:</label>
+            <input type="text" id="option1" required>
+            
+            <label for="option2">Şık 2:</label>
+            <input type="text" id="option2" required>
+            
+            <label for="option3">Şık 3:</label>
+            <input type="text" id="option3" required>
+            
+            <label for="option4">Şık 4:</label>
+            <input type="text" id="option4" required>
+            
+            <label for="correctAnswer">Doğru Cevap (Şık numarası: 1-4):</label>
+            <select id="correctAnswer" required>
+                <option value="1">Şık 1</option>
+                <option value="2">Şık 2</option>
+                <option value="3">Şık 3</option>
+                <option value="4">Şık 4</option>
+            </select>
+            
+            <button type="submit">Soruyu Yükle</button>
+        </form>
+        <div class="message" id="message"></div>
+    </div>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script>
+        // Firebase konfigürasyonu (kendi projenizden alın)
+        const firebaseConfig = {
+  apiKey: "AIzaSyCQKxwHYEbQ47KROEog_qa7BeLcq6At7LA",
+  authDomain: "mobilfutbol-b9d83.firebaseapp.com",
+  databaseURL: "https://mobilfutbol-b9d83-default-rtdb.firebaseio.com",
+  projectId: "mobilfutbol-b9d83",
+  storageBucket: "mobilfutbol-b9d83.firebasestorage.app",
+  messagingSenderId: "799445484199",
+  appId: "1:799445484199:web:6b5316e951d3e20fd09182",
+  measurementId: "G-NT0084ZPDE"
+};
+        // Firebase'i başlat
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        document.getElementById('questionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const questionText = document.getElementById('questionText').value;
+            const option1 = document.getElementById('option1').value;
+            const option2 = document.getElementById('option2').value;
+            const option3 = document.getElementById('option3').value;
+            const option4 = document.getElementById('option4').value;
+            const correctAnswerIndex = document.getElementById('correctAnswer').value;
+            // Doğru cevabı belirleyelim
+            let correctAnswer;
+            if (correctAnswerIndex === "1") {
+                correctAnswer = option1;
+            } else if (correctAnswerIndex === "2") {
+                correctAnswer = option2;
+            } else if (correctAnswerIndex === "3") {
+                correctAnswer = option3;
+            } else if (correctAnswerIndex === "4") {
+                correctAnswer = option4;
+            }
+
+            const newQuestion = {
+                questionText: questionText,
+                option1: option1,
+                option2: option2,
+                option3: option3,
+                option4: option4,
+                correctAnswer: correctAnswer
+            };
+
+            // Yeni soru ekle
+            const newQuestionRef = database.ref('questions').push();
+            newQuestionRef.set(newQuestion, function(error) {
+                const messageEl = document.getElementById('message');
+                if (error) {
+                    messageEl.innerText = "Soru yüklenirken hata oluştu: " + error;
+                    messageEl.style.color = "red";
+                } else {
+                    messageEl.innerText = "Soru başarıyla yüklendi!";
+                    messageEl.style.color = "green";
+                    document.getElementById('questionForm').reset();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
