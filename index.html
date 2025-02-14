@@ -23,17 +23,42 @@
       background: var(--light-bg);
     }
 
+    /* Login Stilleri */
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .login-box {
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-box h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: var(--primary-color);
+    }
+
+    /* Admin Panel Stilleri */
     .admin-container {
       display: grid;
       grid-template-columns: 250px 1fr;
       min-height: 100vh;
     }
 
-    /* Sidebar */
     .sidebar {
       background: var(--primary-color);
       color: white;
       padding: 20px;
+      display: flex;
+      flex-direction: column;
     }
 
     .logo {
@@ -44,6 +69,7 @@
 
     .nav-tabs {
       list-style: none;
+      flex-grow: 1;
     }
 
     .nav-tabs li button {
@@ -67,7 +93,6 @@
       background: var(--secondary-color);
     }
 
-    /* Main Content */
     .main-content {
       padding: 30px;
       max-width: 1200px;
@@ -83,7 +108,6 @@
       display: block;
     }
 
-    /* Form Elements */
     .card {
       background: white;
       border-radius: 8px;
@@ -134,7 +158,6 @@
       color: white;
     }
 
-    /* Blog List */
     .blog-list {
       display: grid;
       gap: 15px;
@@ -174,24 +197,48 @@
       background: #f8d7da;
       color: #721c24;
     }
+
+    .hidden {
+      display: none;
+    }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-  <div class="admin-container">
-    <!-- Sidebar -->
+  <!-- Login Ekranı -->
+  <div id="loginScreen" class="login-container">
+    <div class="login-box">
+      <h2>Admin Girişi</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+          <label>Şifre</label>
+          <input type="password" id="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Giriş Yap</button>
+      </form>
+      <div id="loginMessage" class="message"></div>
+    </div>
+  </div>
+
+  <!-- Admin Paneli -->
+  <div id="adminPanel" class="admin-container hidden">
     <div class="sidebar">
       <div class="logo">Mobil Football Admin</div>
       <ul class="nav-tabs">
         <li><button class="active" onclick="switchTab('blog-management')">Blog Yönetimi</button></li>
         <li><button onclick="switchTab('question-management')">Soru Yönetimi</button></li>
       </ul>
+      <button class="btn btn-danger" onclick="logout()">Çıkış Yap</button>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
-      <!-- Blog Management Tab -->
+      <!-- Blog Yönetimi -->
       <div id="blog-management" class="tab-content active">
         <div class="card">
           <h2>Yeni Blog Yazısı Ekle</h2>
@@ -214,7 +261,7 @@
         </div>
       </div>
 
-      <!-- Question Management Tab -->
+      <!-- Soru Yönetimi -->
       <div id="question-management" class="tab-content">
         <div class="card">
           <h2>Yeni Soru Ekle</h2>
@@ -244,8 +291,7 @@
         </div>
       </div>
 
-      <!-- Messages -->
-      <div id="message"></div>
+      <div id="message" class="message"></div>
     </div>
   </div>
 
@@ -262,10 +308,44 @@
     };
 
     // Firebase Başlatma
-    firebase.initializeApp(firebaseConfig);
+    const app = firebase.initializeApp(firebaseConfig);
+    
     const database = firebase.database();
+    const auth = firebase.auth();
 
-    // Tab Geçiş Fonksiyonu
+    // Oturum Kontrolü
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('adminPanel').classList.remove('hidden');
+      } else {
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('adminPanel').classList.add('hidden');
+      }
+    });
+
+    // Giriş İşlemi
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        showMessage('Giriş başarılı!', 'success', 'loginMessage');
+      } catch (error) {
+        showMessage('Hata: ' + error.message, 'error', 'loginMessage');
+      }
+    });
+
+    // Çıkış İşlemi
+    function logout() {
+      auth.signOut().then(() => {
+        showMessage('Çıkış yapıldı', 'success');
+      });
+    }
+
+    // Tab Geçiş
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
@@ -320,7 +400,7 @@
       }
     });
 
-    // Onay Bekleyen Blogları Göster
+    // Onay Bekleyen Bloglar
     database.ref('blogs').orderByChild('approved').equalTo(false).on('value', (snapshot) => {
       const pendingBlogsDiv = document.getElementById('pendingBlogs');
       pendingBlogsDiv.innerHTML = '';
@@ -335,9 +415,7 @@
             Gönderen: ${blog.postedBy} • 
             ${new Date(blog.timestamp).toLocaleDateString()}
           </div>
-          <div class="blog-actions">
-            <button class="btn btn-success" onclick="approveBlog('${childSnapshot.key}')">Onayla</button>
-          </div>
+          <button class="btn btn-success" onclick="approveBlog('${childSnapshot.key}')">Onayla</button>
         `;
         pendingBlogsDiv.appendChild(blogElement);
       });
@@ -354,8 +432,8 @@
     }
 
     // Mesaj Gösterme
-    function showMessage(text, type) {
-      const messageDiv = document.getElementById('message');
+    function showMessage(text, type, elementId = 'message') {
+      const messageDiv = document.getElementById(elementId);
       messageDiv.className = `message ${type}-message`;
       messageDiv.textContent = text;
       setTimeout(() => messageDiv.textContent = '', 3000);
