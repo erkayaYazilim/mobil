@@ -123,7 +123,6 @@
     <input type="password" id="password" />
 
     <button onclick="login()">Giriş Yap</button>
-    <button onclick="register()">Kayıt Ol</button>
     <div id="authMessage" class="message"></div>
   </div>
 
@@ -244,20 +243,7 @@
     }
 
     // Kayıt Ol
-    function register() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const authMessage = document.getElementById("authMessage");
-      auth.createUserWithEmailAndPassword(email, password)
-        .then(() => {
-          authMessage.style.color = "green";
-          authMessage.innerText = "Kayıt başarılı! Oturum açıldı.";
-        })
-        .catch((error) => {
-          authMessage.style.color = "red";
-          authMessage.innerText = "Kayıt hatası: " + error.message;
-        });
-    }
+
 
     // Çıkış Yap
     function logout() {
