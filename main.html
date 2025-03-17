@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <!-- Responsive için viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ana Sayfa - Mobil Uygulama</title>
+  <style>
+    /* Genel reset */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      color: #333;
+      line-height: 1.6;
+    }
+    header {
+      background: #008577;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+    nav {
+      background: #eee;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 10px;
+    }
+    nav a {
+      margin: 5px 8px;
+      padding: 10px 15px;
+      text-decoration: none;
+      border-radius: 4px;
+      background: #ccc;
+      color: #000;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    nav a:hover {
+      background: #bbb;
+    }
+    .container {
+      max-width: 900px;
+      width: 90%;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    p {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    @media screen and (max-width: 600px) {
+      header { padding: 15px; }
+      nav a { margin: 5px; padding: 8px 10px; font-size: 14px; }
+      .container { padding: 15px; margin: 10px auto; }
+    }
+    .loader-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .ball {
+      width: 40px;
+      height: 40px;
+      background: #008577;
+      border-radius: 50%;
+      margin: 0 10px;
+      animation: bounce 0.5s infinite alternate;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      position: relative; /* MF yazısı için eklendi */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+      font-family: Arial, sans-serif;
+    }
+
+    @keyframes bounce {
+      from {
+        transform: translateY(0) scaleX(1);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      }
+      to {
+        transform: translateY(-100px) scaleX(0.9);
+        box-shadow: 0 25px 15px rgba(0,0,0,0.1);
+      }
+    }
+
+    /* Toplara farklı animasyon gecikmeleri */
+    .ball:nth-child(2) { animation-delay: 0.1s; background: #ff6b6b; }
+    .ball:nth-child(3) { animation-delay: 0.2s; background: #4ecdc4; }
+  </style>
+</head>
+<body>
+    <div class="loader-container" id="loader">
+        <div class="ball">MF</div>
+        <div class="ball">MF</div>
+        <div class="ball">MF</div>
+      </div>
+  <header>
+    <h1>Mobil Uygulama</h1>
+  </header>
+  <nav>
+    <a href="main.html">Ana Sayfa</a>
+    <a href="question.html">Soru Yükle</a>
+    <a href="approve.html">Blog Onay Paneli</a>
+    <a href="upload.html">Blog Yükle</a>
+    <a href="editQuestions.html">Soru Düzenle</a>
+    <a href="blockedUsers.html">Engellenenler</a>
+    <a href="odulYukle.html">Ödül Yükle</a>
+    <a href="odulDuzenle.html">Ödülleri Düzenle</a>
+    <a href="odulAlanlar.html">Ödül Alanlar</a>
+    <a href="#" onclick="logout()">Çıkış Yap</a>
+  </nav>
+  <div class="container">
+    <h2>Hoşgeldiniz!</h2>
+    <p>Bu uygulama, mobil futbol deneyiminizi geliştirmek için tasarlanmıştır.</p>
+    <p>Soru, blog ve ödül işlemlerini kolayca gerçekleştirebilirsiniz.</p>
+    <p>Lütfen menüden ilgili bölüme geçiş yaparak işlemlerinizi başlatın.</p>
+  </div>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
+      authDomain: "futbolmobil-7be36.firebaseapp.com",
+      databaseURL: "https://futbolmobil-7be36-default-rtdb.firebaseio.com",
+      projectId: "futbolmobil-7be36",
+      storageBucket: "futbolmobil-7be36.firebasestorage.app",
+      messagingSenderId: "311578958726",
+      appId: "1:311578958726:web:486cb815a7674702af2a07",
+      measurementId: "G-NE0LTTF1EP"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    function logout() {
+      auth.signOut().then(() => { window.location.href = "index.html"; });
+    }
+    // Loader'ı 2.5 saniye sonra kaldır
+    setTimeout(() => {
+      document.getElementById('loader').remove();
+    }, 2500);
+  </script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blog Onay Paneli - Admin Paneli</title>
+  <style>
+    /* Genel Stil */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    header {
+      background: #008577;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+    }
+    nav {
+      background: #eee;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    nav a {
+      margin: 5px;
+      padding: 8px 12px;
+      text-decoration: none;
+      border-radius: 4px;
+      background: #ccc;
+      color: #000;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    nav a:hover {
+      background: #bbb;
+    }
+    .container {
+      max-width: 900px;
+      width: 95%;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .blog-item {
+      border: 1px solid #ccc;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 4px;
+      background: #fafafa;
+    }
+    .blog-title {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+    .blog-content {
+      margin-bottom: 8px;
+    }
+    .blog-meta {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    .media-preview {
+      margin-bottom: 8px;
+    }
+    .media-preview img, .media-preview video {
+      max-width: 100%;
+      max-height: 300px;
+      display: block;
+      margin: 8px auto;
+    }
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .action-buttons button {
+      padding: 8px 12px;
+      margin: 5px 5px 0 0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #008577;
+      color: #fff;
+      transition: background 0.3s;
+    }
+    .action-buttons button:hover {
+      background: #006f63;
+    }
+    .message {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    /* Küçük ekranlar için */
+    @media screen and (max-width: 600px) {
+      .blog-title {
+        font-size: 16px;
+      }
+      .action-buttons button {
+        padding: 6px 10px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin Panel - Blog Onay</h1>
+  </header>
+  <nav>
+    <a href="main.html">Ana Sayfa</a>
+    <a href="question.html">Soru Yükle</a>
+    <a href="approve.html">Blog Onay Paneli</a>
+    <a href="upload.html">Blog Yükle</a>
+    <a href="editQuestions.html">Soru Düzenle</a>
+    <a href="blockedUsers.html">Engellenenler</a>
+    <a href="odulYukle.html">Ödül Yükle</a>
+    <a href="odulDuzenle.html">Ödülleri Düzenle</a>
+    <a href="odulAlanlar.html">Ödül Alanlar</a>
+    <a href="#" onclick="logout()">Çıkış Yap</a>
+  </nav>
+  <div class="container">
+    <h2>Onay Bekleyen Blog Yazıları</h2>
+    <div id="blogsList"></div>
+    <div class="message" id="approveMessage"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+  <script>
+    // Firebase Konfigürasyonu
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
+      authDomain: "futbolmobil-7be36.firebaseapp.com",
+      databaseURL: "https://futbolmobil-7be36-default-rtdb.firebaseio.com",
+      projectId: "futbolmobil-7be36",
+      storageBucket: "futbolmobil-7be36.firebasestorage.app",
+      messagingSenderId: "311578958726",
+      appId: "1:311578958726:web:486cb815a7674702af2a07",
+      measurementId: "G-NE0LTTF1EP"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    // Oturum kontrolü
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
+
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "index.html";
+      });
+    }
+
+    // Yardımcı: Email içerisindeki nokta karakterlerini virgülle değiştirir.
+    function sanitizeEmail(email) {
+      return email.replace(/\./g, ',');
+    }
+
+    // Engellenen kullanıcıları getirir (Promise döner)
+    function getBlockedUsers() {
+      return db.ref('blockedUsers').once("value").then(snapshot => {
+        const blocked = {};
+        snapshot.forEach(child => {
+          blocked[child.key] = true;
+        });
+        return blocked;
+      });
+    }
+
+    // Onaylanmamış blog yazılarını yükler; gönderici engellendiyse listelenmez.
+    function loadUnapprovedBlogs() {
+      getBlockedUsers().then(blockedUsers => {
+        db.ref('blogs').orderByChild("approved").equalTo(false).on("value", function(snapshot) {
+          const blogsListDiv = document.getElementById("blogsList");
+          blogsListDiv.innerHTML = "";
+          snapshot.forEach(function(childSnapshot) {
+            const blog = childSnapshot.val();
+            // Gönderici engellendiyse (email sanitize edilmiş hali ile kontrol)
+            if (blockedUsers[sanitizeEmail(blog.postedBy)]) return;
+            const blogDiv = document.createElement("div");
+            blogDiv.className = "blog-item";
+            
+            // Blog bilgileri
+            let blogHtml = `
+              <div class="blog-title">${blog.title}</div>
+              <div class="blog-content">${blog.content}</div>
+              <div class="blog-meta">
+                Gönderen: ${blog.postedBy || "Bilinmiyor"} | 
+                Tarih: ${ new Date(blog.timestamp).toLocaleString() }
+              </div>
+            `;
+            // Medya önizlemesi varsa ekle
+            if (blog.mediaUrl) {
+              let mediaHtml = `<div class="media-preview">`;
+              if (blog.mediaType === "video") {
+                mediaHtml += `<video controls>
+                                <source src="${blog.mediaUrl}" type="video/mp4">
+                                Tarayıcınız video etiketini desteklemiyor.
+                              </video>`;
+              } else {
+                mediaHtml += `<img src="${blog.mediaUrl}" alt="Medya Önizlemesi">`;
+              }
+              mediaHtml += `</div>`;
+              blogHtml += mediaHtml;
+            }
+            blogDiv.innerHTML = blogHtml;
+            
+            // Butonlar
+            const btnContainer = document.createElement("div");
+            btnContainer.className = "action-buttons";
+            
+            // Onayla butonu
+            const approveBtn = document.createElement("button");
+            approveBtn.textContent = "Onayla";
+            approveBtn.onclick = function() { approveBlog(blog.id); };
+            btnContainer.appendChild(approveBtn);
+            
+            // Sil butonu
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Sil";
+            deleteBtn.onclick = function() { deleteBlog(blog.id); };
+            btnContainer.appendChild(deleteBtn);
+            
+            // Engelle butonu
+            const blockBtn = document.createElement("button");
+            blockBtn.textContent = "Engelle";
+            blockBtn.onclick = function() { blockUser(blog.postedBy); };
+            btnContainer.appendChild(blockBtn);
+            
+            blogDiv.appendChild(btnContainer);
+            blogsListDiv.appendChild(blogDiv);
+          });
+        });
+      });
+    }
+    loadUnapprovedBlogs();
+
+    function approveBlog(blogId) {
+      const blogRef = db.ref('blogs/' + blogId);
+      blogRef.update({ approved: true }, function(error) {
+        const msgDiv = document.getElementById("approveMessage");
+        if (error) {
+          msgDiv.style.color = "red";
+          msgDiv.textContent = "Onaylama başarısız: " + error.message;
+        } else {
+          msgDiv.style.color = "green";
+          msgDiv.textContent = "Blog yazısı onaylandı.";
+        }
+      });
+    }
+
+    function deleteBlog(blogId) {
+      if (confirm("Bu blog yazısını silmek istediğinizden emin misiniz?")) {
+        db.ref('blogs/' + blogId).remove(function(error) {
+          const msgDiv = document.getElementById("approveMessage");
+          if (error) {
+            msgDiv.style.color = "red";
+            msgDiv.textContent = "Silme işlemi başarısız: " + error.message;
+          } else {
+            msgDiv.style.color = "green";
+            msgDiv.textContent = "Blog yazısı silindi.";
+          }
+        });
+      }
+    }
+
+    function blockUser(userId) {
+      if (!userId) {
+        alert("Gönderen bilgisi mevcut değil.");
+        return;
+      }
+      if (confirm("Bu kullanıcının tüm gönderilerini engellemek istediğinizden emin misiniz?")) {
+        const sanitizedUserId = sanitizeEmail(userId);
+        db.ref('blockedUsers/' + sanitizedUserId).set(true, function(error) {
+          const msgDiv = document.getElementById("approveMessage");
+          if (error) {
+            msgDiv.style.color = "red";
+            msgDiv.textContent = "Engelleme başarısız: " + error.message;
+          } else {
+            msgDiv.style.color = "green";
+            msgDiv.textContent = "Kullanıcı engellendi.";
+            loadUnapprovedBlogs();
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>

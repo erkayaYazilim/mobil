@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <!-- Mobil uyum için viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Soru Yükle - Admin Paneli</title>
+  <style>
+    /* Genel Reset */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      color: #333;
+      line-height: 1.6;
+    }
+    header {
+      background: #008577;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+    }
+    nav {
+      background: #eee;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    nav a {
+      margin: 5px;
+      padding: 8px 12px;
+      text-decoration: none;
+      border-radius: 4px;
+      background: #ccc;
+      color: #000;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    nav a:hover {
+      background: #bbb;
+    }
+    .container {
+      max-width: 700px;
+      width: 95%;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      color: #555;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background: #008577;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #006f63;
+    }
+    .message {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    /* Küçük ekranlar için */
+    @media screen and (max-width: 600px) {
+      input, select, textarea {
+        font-size: 14px;
+      }
+      button {
+        font-size: 14px;
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin Panel - Soru Yükle</h1>
+  </header>
+  <nav>
+    <a href="main.html">Ana Sayfa</a>
+    <a href="question.html">Soru Yükle</a>
+    <a href="approve.html">Blog Onay Paneli</a>
+    <a href="upload.html">Blog Yükle</a>
+    <a href="editQuestions.html">Soru Düzenle</a>
+    <a href="blockedUsers.html">Engellenenler</a>
+    <a href="odulYukle.html">Ödül Yükle</a>
+    <a href="odulDuzenle.html">Ödülleri Düzenle</a>
+    <a href="odulAlanlar.html">Ödül Alanlar</a>
+    <a href="#" onclick="logout()">Çıkış Yap</a>
+  </nav>
+  <div class="container">
+    <h2>Soru Yükleme Paneli</h2>
+    <form id="questionForm">
+      <label for="questionText">Soru Metni:</label>
+      <textarea id="questionText" required></textarea>
+      
+      <label for="option1">Şık 1:</label>
+      <input type="text" id="option1" required>
+      
+      <label for="option2">Şık 2:</label>
+      <input type="text" id="option2" required>
+      
+      <label for="option3">Şık 3:</label>
+      <input type="text" id="option3" required>
+      
+      <label for="option4">Şık 4:</label>
+      <input type="text" id="option4" required>
+      
+      <label for="correctAnswer">Doğru Cevap (Şık numarası: 1-4):</label>
+      <select id="correctAnswer" required>
+        <option value="1">Şık 1</option>
+        <option value="2">Şık 2</option>
+        <option value="3">Şık 3</option>
+        <option value="4">Şık 4</option>
+      </select>
+      
+      <button type="submit">Soruyu Yükle</button>
+    </form>
+    <div class="message" id="questionMessage"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+  <script>
+    // Firebase Konfigürasyonu (main.html ile aynı)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
+      authDomain: "futbolmobil-7be36.firebaseapp.com",
+      databaseURL: "https://futbolmobil-7be36-default-rtdb.firebaseio.com",
+      projectId: "futbolmobil-7be36",
+      storageBucket: "futbolmobil-7be36.firebasestorage.app",
+      messagingSenderId: "311578958726",
+      appId: "1:311578958726:web:486cb815a7674702af2a07",
+      measurementId: "G-NE0LTTF1EP"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    // Kullanıcı oturum kontrolü
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
+
+    document.getElementById('questionForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const questionText = document.getElementById('questionText').value;
+      const option1 = document.getElementById('option1').value;
+      const option2 = document.getElementById('option2').value;
+      const option3 = document.getElementById('option3').value;
+      const option4 = document.getElementById('option4').value;
+      const correctAnswerIndex = document.getElementById('correctAnswer').value;
+      const questionMessage = document.getElementById('questionMessage');
+
+      let correctAnswer;
+      if (correctAnswerIndex === "1") {
+        correctAnswer = option1;
+      } else if (correctAnswerIndex === "2") {
+        correctAnswer = option2;
+      } else if (correctAnswerIndex === "3") {
+        correctAnswer = option3;
+      } else if (correctAnswerIndex === "4") {
+        correctAnswer = option4;
+      }
+
+      const newQuestion = {
+        questionText: questionText,
+        option1: option1,
+        option2: option2,
+        option3: option3,
+        option4: option4,
+        correctAnswer: correctAnswer
+      };
+
+      db.ref('questions').push(newQuestion, function(error) {
+        if (error) {
+          questionMessage.style.color = "red";
+          questionMessage.innerText = "Soru yüklenirken hata: " + error;
+        } else {
+          questionMessage.style.color = "green";
+          questionMessage.innerText = "Soru başarıyla yüklendi!";
+          document.getElementById('questionForm').reset();
+        }
+      });
+    });
+
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "index.html";
+      });
+    }
+  </script>
+</body>
+</html>

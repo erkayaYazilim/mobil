@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <!-- Mobil uyum için viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Soru Düzenleme - Admin Paneli</title>
+  <style>
+    /* Genel reset */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      color: #333;
+      line-height: 1.6;
+    }
+    header {
+      background: #008577;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+    }
+    nav {
+      background: #eee;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    nav a {
+      margin: 5px;
+      padding: 8px 12px;
+      text-decoration: none;
+      border-radius: 4px;
+      background: #ccc;
+      color: #000;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    nav a:hover {
+      background: #bbb;
+    }
+    .container {
+      max-width: 900px;
+      width: 95%;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .question-item {
+      border: 1px solid #ccc;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 4px;
+      background: #fafafa;
+    }
+    .question-title {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+    .question-details {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .action-buttons button {
+      padding: 6px 10px;
+      margin-left: 6px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #008577;
+      color: #fff;
+      transition: background 0.3s;
+    }
+    .action-buttons button:hover {
+      background: #006f63;
+    }
+    .message {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    /* Küçük ekranlar için */
+    @media screen and (max-width: 600px) {
+      .question-title {
+        font-size: 14px;
+      }
+      .question-details {
+        font-size: 13px;
+      }
+      .action-buttons button {
+        padding: 5px 8px;
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin Panel - Soru Düzenleme</h1>
+  </header>
+  <nav>
+    <a href="main.html">Ana Sayfa</a>
+    <a href="question.html">Soru Yükle</a>
+    <a href="approve.html">Blog Onay Paneli</a>
+    <a href="upload.html">Blog Yükle</a>
+    <a href="editQuestions.html">Soru Düzenle</a>
+    <a href="blockedUsers.html">Engellenenler</a>
+    <a href="odulYukle.html">Ödül Yükle</a>
+    <a href="odulDuzenle.html">Ödülleri Düzenle</a>
+    <a href="odulAlanlar.html">Ödül Alanlar</a>
+    <a href="#" onclick="logout()">Çıkış Yap</a>
+  </nav>
+  <div class="container">
+    <h2>Soruları Düzenle / Sil</h2>
+    <div id="questionsList"></div>
+    <div class="message" id="questionEditMessage"></div>
+  </div>
+  <!-- Firebase SDK (compat modunda) -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
+      authDomain: "futbolmobil-7be36.firebaseapp.com",
+      databaseURL: "https://futbolmobil-7be36-default-rtdb.firebaseio.com",
+      projectId: "futbolmobil-7be36",
+      storageBucket: "futbolmobil-7be36.firebasestorage.app",
+      messagingSenderId: "311578958726",
+      appId: "1:311578958726:web:486cb815a7674702af2a07",
+      measurementId: "G-NE0LTTF1EP"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    auth.onAuthStateChanged((user) => { 
+      if (!user) { window.location.href = "index.html"; }
+    });
+
+    function loadQuestions() {
+      db.ref('questions').on("value", function(snapshot) {
+        const questionsListDiv = document.getElementById("questionsList");
+        questionsListDiv.innerHTML = "";
+        snapshot.forEach(function(childSnapshot) {
+          const questionKey = childSnapshot.key;
+          const question = childSnapshot.val();
+          const questionDiv = document.createElement("div");
+          questionDiv.className = "question-item";
+          questionDiv.innerHTML = `
+            <div class="question-title">${question.questionText}</div>
+            <div class="question-details">
+              Şık 1: ${question.option1}<br>
+              Şık 2: ${question.option2}<br>
+              Şık 3: ${question.option3}<br>
+              Şık 4: ${question.option4}<br>
+              Doğru Cevap: ${question.correctAnswer}
+            </div>
+          `;
+          const btnContainer = document.createElement("div");
+          btnContainer.className = "action-buttons";
+          const editBtn = document.createElement("button");
+          editBtn.textContent = "Düzenle";
+          editBtn.onclick = function() { editQuestion(questionKey, question); };
+          btnContainer.appendChild(editBtn);
+          const deleteBtn = document.createElement("button");
+          deleteBtn.textContent = "Sil";
+          deleteBtn.onclick = function() { deleteQuestion(questionKey); };
+          btnContainer.appendChild(deleteBtn);
+          questionDiv.appendChild(btnContainer);
+          questionsListDiv.appendChild(questionDiv);
+        });
+      });
+    }
+    loadQuestions();
+
+    function editQuestion(questionKey, question) {
+      const newQuestionText = prompt("Yeni soru metnini giriniz:", question.questionText);
+      if (newQuestionText === null) return;
+      const newOption1 = prompt("Yeni 1. şıkkı giriniz:", question.option1);
+      if (newOption1 === null) return;
+      const newOption2 = prompt("Yeni 2. şıkkı giriniz:", question.option2);
+      if (newOption2 === null) return;
+      const newOption3 = prompt("Yeni 3. şıkkı giriniz:", question.option3);
+      if (newOption3 === null) return;
+      const newOption4 = prompt("Yeni 4. şıkkı giriniz:", question.option4);
+      if (newOption4 === null) return;
+      const newCorrectAnswerIndex = prompt("Doğru cevabı (1-4) giriniz:", 
+           question.correctAnswer === question.option1 ? "1" :
+           question.correctAnswer === question.option2 ? "2" :
+           question.correctAnswer === question.option3 ? "3" : "4");
+      if (newCorrectAnswerIndex === null) return;
+      let newCorrectAnswer;
+      if (newCorrectAnswerIndex === "1") { newCorrectAnswer = newOption1; }
+      else if (newCorrectAnswerIndex === "2") { newCorrectAnswer = newOption2; }
+      else if (newCorrectAnswerIndex === "3") { newCorrectAnswer = newOption3; }
+      else if (newCorrectAnswerIndex === "4") { newCorrectAnswer = newOption4; }
+      else { alert("Geçersiz doğru cevap seçimi."); return; }
+      const updatedQuestion = {
+        questionText: newQuestionText,
+        option1: newOption1,
+        option2: newOption2,
+        option3: newOption3,
+        option4: newOption4,
+        correctAnswer: newCorrectAnswer
+      };
+      db.ref('questions/' + questionKey).update(updatedQuestion, function(error) {
+        const msgDiv = document.getElementById("questionEditMessage");
+        if (error) { msgDiv.style.color = "red"; msgDiv.textContent = "Güncelleme hatası: " + error.message; }
+        else { msgDiv.style.color = "green"; msgDiv.textContent = "Soru başarıyla güncellendi."; }
+      });
+    }
+
+    function deleteQuestion(questionKey) {
+      if (confirm("Bu soruyu silmek istediğinizden emin misiniz?")) {
+        db.ref('questions/' + questionKey).remove(function(error) {
+          const msgDiv = document.getElementById("questionEditMessage");
+          if (error) { msgDiv.style.color = "red"; msgDiv.textContent = "Silme hatası: " + error.message; }
+          else { msgDiv.style.color = "green"; msgDiv.textContent = "Soru başarıyla silindi."; }
+        });
+      }
+    }
+
+    function logout() {
+      auth.signOut().then(() => { window.location.href = "index.html"; });
+    }
+  </script>
+</body>
+</html>

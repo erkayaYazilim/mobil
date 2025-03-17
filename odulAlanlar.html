@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <!-- Mobil uyum için viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ödül Talebi Yönetimi - Mobil Futbol</title>
+  <style>
+    /* Genel Reset */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 15px;
+      color: #333;
+    }
+    header {
+      background: #008577;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+    }
+    nav {
+      background: #eee;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    nav a {
+      margin: 5px;
+      padding: 8px 12px;
+      text-decoration: none;
+      border-radius: 4px;
+      background: #ccc;
+      color: #000;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    nav a:hover {
+      background: #bbb;
+    }
+    .container {
+      max-width: 900px;
+      width: 95%;
+      margin: 20px auto;
+      background-color: #fff;
+      border-radius: 5px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    h1 {
+      text-align: center;
+      color: #fff9f9;
+      margin-bottom: 10px;
+    }
+    p {
+      text-align: center;
+      color: #555;
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+      font-size: 14px;
+    }
+    th {
+      background-color: #f8f8f8;
+    }
+    .btn-deliver {
+      padding: 8px 12px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-deliver:hover {
+      background-color: #218838;
+    }
+    .status-delivered {
+      color: green;
+      font-weight: bold;
+    }
+    .status-pending {
+      color: red;
+      font-weight: bold;
+    }
+    /* Küçük ekranlar için */
+    @media screen and (max-width: 600px) {
+      th, td {
+        padding: 8px;
+        font-size: 12px;
+      }
+      .btn-deliver {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+    }
+  </style>
+  <!-- Firebase SDK (v8) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Ödül Talebi Yönetimi - Mobil Futbol</h1>
+  </header>
+  <nav>
+    <a href="main.html">Ana Sayfa</a>
+    <a href="question.html">Soru Yükle</a>
+    <a href="approve.html">Blog Onay Paneli</a>
+    <a href="upload.html">Blog Yükle</a>
+    <a href="editQuestions.html">Soru Düzenle</a>
+    <a href="blockedUsers.html">Engellenenler</a>
+    <a href="odulYukle.html">Ödül Yükle</a>
+    <a href="odulDuzenle.html">Ödülleri Düzenle</a>
+    <a href="odulAlanlar.html">Ödül Alanlar</a>
+    <a href="#" onclick="logout()">Çıkış Yap</a>
+  </nav>
+  <div class="container">
+    <h1>Ödül Talebi Yönetimi</h1>
+    <p>Ödül verilmeyen (teslim edilmemiş) talepler en üstte gösterilmektedir.</p>
+    <table id="claimsTable">
+      <thead>
+        <tr>
+          <th>Ödül Başlığı</th>
+          <th>Kullanıcı (Email)</th>
+          <th>Talep Tarihi</th>
+          <th>Durum</th>
+          <th>İşlem</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- JavaScript ile claim satırları buraya eklenecek -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Firebase yapılandırmanız:
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
+      authDomain: "futbolmobil-7be36.firebaseapp.com",
+      databaseURL: "https://futbolmobil-7be36-default-rtdb.firebaseio.com",
+      projectId: "futbolmobil-7be36",
+      storageBucket: "futbolmobil-7be36.firebasestorage.app",
+      messagingSenderId: "311578958726",
+      appId: "1:311578958726:web:486cb815a7674702af2a07",
+      measurementId: "G-NE0LTTF1EP"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    // "gifts" node altındaki ödül taleplerini çekiyoruz
+    const giftsRef = firebase.database().ref('gifts');
+
+    // Önce claimleri toplayıp, eğer email bilgisi yoksa kullanıcı bilgilerini çekelim
+    function loadClaims() {
+      giftsRef.once('value').then(snapshot => {
+        let claimsArray = [];
+        snapshot.forEach(giftSnap => {
+          const giftData = giftSnap.val();
+          const giftId = giftSnap.key;
+          const title = giftData.title || "Bilinmiyor";
+          if(giftData.claimedBy) {
+            for (let userId in giftData.claimedBy) {
+              let claimData = giftData.claimedBy[userId];
+              claimsArray.push({
+                giftId: giftId,
+                title: title,
+                userId: userId,
+                // Email alanı varsa kullan, yoksa null bırak (sonrasında users node'dan doldurulacak)
+                email: claimData.email ? claimData.email : null,
+                delivered: claimData.delivered,
+                claimTimestamp: claimData.claimTimestamp || 0
+              });
+            }
+          }
+        });
+        // Eğer herhangi bir claim email bilgisi eksikse, users node'dan çekelim
+        firebase.database().ref('users').once('value').then(userSnapshot => {
+          let userMap = {};
+          userSnapshot.forEach(userSnap => {
+            let user = userSnap.val();
+            userMap[userSnap.key] = user.email || userSnap.key;
+          });
+          claimsArray.forEach(claim => {
+            if (!claim.email && userMap[claim.userId]) {
+              claim.email = userMap[claim.userId];
+            }
+          });
+          // Sıralama: Öncelikle teslim edilmemiş, ardından en yeni talepler
+          claimsArray.sort((a, b) => {
+            if(a.delivered === b.delivered) {
+              return b.claimTimestamp - a.claimTimestamp;
+            } else if(a.delivered === false && b.delivered === true) {
+              return -1;
+            } else {
+              return 1;
+            }
+          });
+          renderClaims(claimsArray);
+        });
+      }).catch(error => {
+        console.error("Claimler yüklenirken hata: ", error);
+      });
+    }
+
+    function renderClaims(claims) {
+      const tbody = document.getElementById('claimsTable').querySelector('tbody');
+      tbody.innerHTML = "";
+      if(claims.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='5'>Kayıtlı talep bulunamadı.</td></tr>";
+        return;
+      }
+      claims.forEach(claim => {
+        const tr = document.createElement('tr');
+        const dateStr = claim.claimTimestamp ? new Date(claim.claimTimestamp).toLocaleString() : "Bilinmiyor";
+        tr.innerHTML = `
+          <td>${claim.title}</td>
+          <td>${claim.email}</td>
+          <td>${dateStr}</td>
+          <td class="${claim.delivered ? 'status-delivered' : 'status-pending'}">
+              ${claim.delivered ? "Teslim Edildi" : "Beklemede"}
+          </td>
+          <td>
+              ${claim.delivered ? '' : '<button class="btn-deliver" onclick="markDelivered(\''+ claim.giftId +'\', \''+ claim.userId +'\')">Teslim Edildi</button>'}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function markDelivered(giftId, userId) {
+      // İlgili claim'in "delivered" alanını true yapalım
+      const claimRef = firebase.database().ref('gifts').child(giftId).child('claimedBy').child(userId);
+      claimRef.update({ delivered: true }, function(error) {
+        if (error) {
+          alert("Güncelleme hatası: " + error.message);
+        } else {
+          alert("Ödül teslim edildi olarak işaretlendi.");
+          loadClaims();
+        }
+      });
+    }
+
+    // Sayfa yüklendiğinde claimleri çek
+    loadClaims();
+  </script>
+</body>
+</html>

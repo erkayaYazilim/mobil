@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <!-- Mobil uyum için viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ödül Yükle - Mobil Futbol Admin Panel</title>
+  <style>
+    /* Genel Reset */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+      line-height: 1.6;
+      padding: 15px;
+    }
+    header {
+      background: #008577;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+    }
+    nav {
+      background: #eee;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    nav a {
+      margin: 5px;
+      padding: 8px 12px;
+      text-decoration: none;
+      border-radius: 4px;
+      background: #ccc;
+      color: #000;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    nav a:hover {
+      background: #bbb;
+    }
+    .container {
+      max-width: 600px;
+      width: 95%;
+      background-color: #fff;
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    h1 {
+      text-align: center;
+      color: #fffcfc;
+      margin-bottom: 20px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin: 10px 0 5px;
+      color: #555;
+    }
+    input[type="text"],
+    input[type="number"],
+    textarea {
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    input[type="file"] {
+      margin: 10px 0;
+    }
+    button {
+      padding: 12px;
+      margin-top: 20px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .preview {
+      margin-top: 10px;
+      text-align: center;
+    }
+    .preview img {
+      max-width: 100%;
+      border-radius: 5px;
+    }
+    /* Küçük ekranlar için */
+    @media screen and (max-width: 600px) {
+      input[type="text"],
+      input[type="number"],
+      textarea {
+        font-size: 14px;
+      }
+      button {
+        font-size: 14px;
+        padding: 10px;
+      }
+    }
+  </style>
+  <!-- Firebase SDK'ları (v8 uyumluluk sürümü) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Ödül Yükle - Mobil Futbol Admin Panel</h1>
+  </header>
+  <nav>
+    <a href="main.html">Ana Sayfa</a>
+    <a href="question.html">Soru Yükle</a>
+    <a href="approve.html">Blog Onay Paneli</a>
+    <a href="upload.html">Blog Yükle</a>
+    <a href="editQuestions.html">Soru Düzenle</a>
+    <a href="blockedUsers.html">Engellenenler</a>
+    <a href="odulYukle.html">Ödül Yükle</a>
+    <a href="odulDuzenle.html">Ödülleri Düzenle</a>
+    <a href="odulAlanlar.html">Ödül Alanlar</a>
+    <a href="#" onclick="logout()">Çıkış Yap</a>
+  </nav>
+  <div class="container">
+    <h1>Ödül Yükle</h1>
+    <form id="rewardForm">
+      <!-- Fotoğraf Yükleme -->
+      <label for="photo">Ödül Fotoğrafı:</label>
+      <input type="file" id="photo" accept="image/*" required>
+      <div class="preview" id="preview"></div>
+      
+      <!-- Ödül Başlığı -->
+      <label for="title">Ödül Başlığı:</label>
+      <input type="text" id="title" placeholder="Ödül başlığını girin" required>
+      
+      <!-- Ödül Açıklaması -->
+      <label for="description">Ödül Açıklaması:</label>
+      <textarea id="description" placeholder="Ödül açıklamasını girin" rows="4" required></textarea>
+      
+      <!-- Ödül Fiyatı (Token) -->
+      <label for="price">Ödül Fiyatı (Token):</label>
+      <input type="number" id="price" placeholder="Ödül fiyatını girin" required>
+      
+      <button type="submit">Ödülü Yükle</button>
+    </form>
+  </div>
+
+  <script>
+    // Firebase yapılandırma bilgilerinizi buraya ekleyin.
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
+      authDomain: "futbolmobil-7be36.firebaseapp.com",
+      databaseURL: "https://futbolmobil-7be36-default-rtdb.firebaseio.com",
+      projectId: "futbolmobil-7be36",
+      storageBucket: "futbolmobil-7be36.firebasestorage.app",
+      messagingSenderId: "311578958726",
+      appId: "1:311578958726:web:486cb815a7674702af2a07",
+      measurementId: "G-NE0LTTF1EP"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    // Oturum kontrolü (isteğe bağlı)
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) {
+        // Giriş yapılmamışsa index.html'e yönlendirilebilir
+        window.location.href = "index.html";
+      }
+    });
+
+    // Form ve önizleme elemanlarını seçelim
+    const rewardForm = document.getElementById('rewardForm');
+    const photoInput = document.getElementById('photo');
+    const previewDiv = document.getElementById('preview');
+
+    // Fotoğraf seçildiğinde önizleme gösterimi
+    photoInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewDiv.innerHTML = '<img src="' + e.target.result + '" alt="Ödül Fotoğrafı">';
+        }
+        reader.readAsDataURL(file);
+      } else {
+        previewDiv.innerHTML = '';
+      }
+    });
+
+    // Resmi sıkıştırmak için fonksiyon (JPEG, kalite: 0.7)
+    function compressImage(file, callback) {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = function(event) {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 600; // Maksimum genişlik (isteğe bağlı)
+          let width = img.width;
+          let height = img.height;
+          if (width > MAX_WIDTH) {
+            height = height * (MAX_WIDTH / width);
+            width = MAX_WIDTH;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(function(blob) {
+            callback(blob);
+          }, 'image/jpeg', 0.7);
+        };
+      };
+    }
+
+    // Form gönderimi işlemi
+    rewardForm.addEventListener('submit', function(e) {
+      e.preventDefault(); // Formun varsayılan gönderimini engelle
+
+      const title = document.getElementById('title').value;
+      const description = document.getElementById('description').value;
+      const price = parseInt(document.getElementById('price').value);
+      const file = photoInput.files[0];
+
+      if (!file || !title || !description || isNaN(price)) {
+        alert('Lütfen tüm alanları doldurun.');
+        return;
+      }
+
+      // Resmi sıkıştırıp ardından Firebase Storage'a yükleyelim
+      compressImage(file, function(compressedBlob) {
+        const storageRef = firebase.storage().ref();
+        const fileRef = storageRef.child('rewards/' + Date.now() + '_' + file.name);
+        const uploadTask = fileRef.put(compressedBlob);
+        uploadTask.on('state_changed', 
+          function(snapshot) {
+            // İlerleme durumunu isteğe bağlı izleyebilirsiniz
+          }, 
+          function(error) {
+            alert('Fotoğraf yüklenirken hata: ' + error.message);
+          }, 
+          function() {
+            uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
+              const rewardData = {
+                title: title,
+                description: description,
+                imageUrl: downloadURL,
+                price: price,
+                timestamp: Date.now()
+              };
+              firebase.database().ref('gifts').push(rewardData, function(error) {
+                if (error) {
+                  alert('Ödül kaydedilirken hata: ' + error.message);
+                } else {
+                  alert('Ödül başarıyla yüklendi!');
+                  rewardForm.reset();
+                  previewDiv.innerHTML = '';
+                }
+              });
+            });
+          }
+        );
+      });
+    });
+
+    function logout() {
+      firebase.auth().signOut().then(() => { window.location.href = "index.html"; });
+    }
+  </script>
+</body>
+</html>

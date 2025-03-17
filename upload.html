@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <!-- Mobil uyum için viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blog Yükle - Admin Paneli</title>
+  <style>
+    /* Genel Reset */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      color: #333;
+      line-height: 1.6;
+      padding: 15px;
+    }
+    header {
+      background: #008577;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+    }
+    nav {
+      background: #eee;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    nav a {
+      margin: 5px;
+      padding: 8px 12px;
+      text-decoration: none;
+      border-radius: 4px;
+      background: #ccc;
+      color: #000;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    nav a:hover {
+      background: #bbb;
+    }
+    .container {
+      max-width: 700px;
+      width: 95%;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      color: #555;
+    }
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    input[type="file"] {
+      margin-top: 4px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background: #008577;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #006f63;
+    }
+    .message {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .media-preview {
+      margin-top: 10px;
+      text-align: center;
+    }
+    .media-preview img, .media-preview video {
+      max-width: 100%;
+      max-height: 300px;
+      display: block;
+      margin: 0 auto;
+    }
+    progress {
+      width: 100%;
+      height: 20px;
+      margin-top: 10px;
+      display: none;
+    }
+    /* Küçük ekranlar için */
+    @media screen and (max-width: 600px) {
+      input[type="text"],
+      textarea {
+        font-size: 14px;
+      }
+      button {
+        font-size: 14px;
+        padding: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin Panel - Blog Yükle</h1>
+  </header>
+  <nav>
+    <a href="main.html">Ana Sayfa</a>
+    <a href="question.html">Soru Yükle</a>
+    <a href="approve.html">Blog Onay Paneli</a>
+    <a href="upload.html">Blog Yükle</a>
+    <a href="editQuestions.html">Soru Düzenle</a>
+    <a href="blockedUsers.html">Engellenenler</a>
+    <a href="odulYukle.html">Ödül Yükle</a>
+    <a href="odulDuzenle.html">Ödülleri Düzenle</a>
+    <a href="odulAlanlar.html">Ödül Alanlar</a>
+    <a href="#" onclick="logout()">Çıkış Yap</a>
+  </nav>
+
+  <div class="container">
+    <h2>Blog Yazısı Yükle</h2>
+    <form id="blogForm">
+      <label for="title">Başlık:</label>
+      <input type="text" id="title" required>
+      
+      <label for="content">İçerik (HTML formatında):</label>
+      <textarea id="content" rows="8" required></textarea>
+      
+      <label for="media">Opsiyonel Medya (Fotoğraf veya 15 sn'den kısa video):</label>
+      <input type="file" id="media" accept="image/*,video/*">
+      
+      <progress id="uploadProgress" value="0" max="100"></progress>
+      
+      <div class="media-preview" id="mediaPreview" style="display:none;">
+        <img id="imgPreview" src="" alt="Medya Önizlemesi" style="display:none;">
+        <video id="videoPreview" controls style="display:none;"></video>
+      </div>
+      
+      <button type="submit">Yükle</button>
+    </form>
+    <div class="message" id="uploadMessage"></div>
+  </div>
+
+  <!-- Firebase SDK (compat modunda) -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
+  <script>
+   const firebaseConfig = {
+      apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
+      authDomain: "futbolmobil-7be36.firebaseapp.com",
+      databaseURL: "https://futbolmobil-7be36-default-rtdb.firebaseio.com",
+      projectId: "futbolmobil-7be36",
+      storageBucket: "futbolmobil-7be36.firebasestorage.app",
+      messagingSenderId: "311578958726",
+      appId: "1:311578958726:web:486cb815a7674702af2a07",
+      measurementId: "G-NE0LTTF1EP"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    const storage = firebase.storage();
+
+    // Giriş kontrolü
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
+
+    let selectedFile = null;
+    let isVideo = false;
+    const mediaInput = document.getElementById('media');
+    const mediaPreview = document.getElementById('mediaPreview');
+    const imgPreview = document.getElementById('imgPreview');
+    const videoPreview = document.getElementById('videoPreview');
+    const uploadProgress = document.getElementById('uploadProgress');
+
+    // Basit resim sıkıştırma fonksiyonu
+    function compressImage(file, callback) {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = function(event) {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 640;
+          let width = img.width;
+          let height = img.height;
+          if (width > MAX_WIDTH) {
+            height = height * (MAX_WIDTH / width);
+            width = MAX_WIDTH;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(function(blob) {
+            callback(blob);
+          }, 'image/jpeg', 0.7);
+        };
+      };
+    }
+
+    mediaInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) {
+        mediaPreview.style.display = "none";
+        return;
+      }
+      selectedFile = file;
+      const mimeType = file.type;
+      if (mimeType.startsWith("video/")) {
+        isVideo = true;
+        imgPreview.style.display = "none";
+        videoPreview.style.display = "block";
+        const videoURL = URL.createObjectURL(file);
+        videoPreview.src = videoURL;
+        mediaPreview.style.display = "block";
+        videoPreview.onloadedmetadata = function() {
+          if (videoPreview.duration > 15) {
+            alert("Videonun süresi 15 saniyeden fazla olamaz.");
+            selectedFile = null;
+            mediaInput.value = "";
+            mediaPreview.style.display = "none";
+          }
+        };
+      } else if (mimeType.startsWith("image/")) {
+        isVideo = false;
+        videoPreview.style.display = "none";
+        imgPreview.style.display = "block";
+        mediaPreview.style.display = "block";
+        compressImage(file, function(blob) {
+          selectedFile = blob;
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            imgPreview.src = e.target.result;
+          };
+          reader.readAsDataURL(blob);
+        });
+      }
+    });
+
+    document.getElementById('blogForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      const content = document.getElementById('content').value;
+      if (!title || !content) {
+        document.getElementById('uploadMessage').innerText = "Lütfen başlık ve içerik giriniz.";
+        return;
+      }
+      // Blog ID ve timestamp
+      const timestamp = Date.now();
+      const blogId = String(timestamp);
+      // Otomatik onaylı, gönderici "Admin"
+      if (selectedFile) {
+        const storageRef = storage.ref().child("blog_media").child(blogId);
+        const uploadTask = storageRef.put(selectedFile);
+        uploadProgress.style.display = "block";
+        uploadTask.on('state_changed', (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          uploadProgress.value = progress;
+        }, (error) => {
+          document.getElementById('uploadMessage').style.color = "red";
+          document.getElementById('uploadMessage').innerText = "Medya yükleme hatası: " + error.message;
+          uploadProgress.style.display = "none";
+        }, () => {
+          uploadTask.snapshot.ref.getDownloadURL().then((mediaUrl) => {
+            const mediaType = isVideo ? "video" : "image";
+            postBlog(title, content, mediaUrl, mediaType);
+          });
+        });
+      } else {
+        postBlog(title, content, null, null);
+      }
+    });
+
+    function postBlog(title, content, mediaUrl, mediaType) {
+      const timestamp = Date.now();
+      const blogId = String(timestamp);
+      const newBlog = {
+        id: blogId,
+        title: title,
+        content: content,
+        timestamp: timestamp,
+        likes: 0,
+        dislikes: 0,
+        postedBy: "Admin",
+        approved: true,
+        mediaUrl: mediaUrl,
+        mediaType: mediaType
+      };
+      db.ref('blogs/' + blogId).set(newBlog, function(error) {
+        const uploadMessage = document.getElementById('uploadMessage');
+        uploadProgress.style.display = "none";
+        if (error) {
+          uploadMessage.style.color = "red";
+          uploadMessage.innerText = "Yükleme başarısız: " + error.message;
+        } else {
+          uploadMessage.style.color = "green";
+          uploadMessage.innerText = "Blog yazısı başarıyla yüklendi ve yayınlandı.";
+          document.getElementById('blogForm').reset();
+          document.getElementById('mediaPreview').style.display = "none";
+          selectedFile = null;
+        }
+      });
+    }
+
+    function logout() {
+      auth.signOut().then(() => { window.location.href = "index.html"; });
+    }
+  </script>
+</body>
+</html>

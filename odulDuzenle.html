@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <!-- Mobil uyum için viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ödülleri Düzenle - Admin Paneli</title>
+  <style>
+    /* Genel Reset */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      color: #333;
+      line-height: 1.6;
+      padding: 15px;
+    }
+    header {
+      background: #008577;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+    }
+    nav {
+      background: #eee;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    nav a {
+      margin: 5px;
+      padding: 8px 12px;
+      text-decoration: none;
+      border-radius: 4px;
+      background: #ccc;
+      color: #000;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    nav a:hover {
+      background: #bbb;
+    }
+    .container {
+      max-width: 900px;
+      width: 95%;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+      font-size: 14px;
+    }
+    th {
+      background-color: #f8f8f8;
+    }
+    /* Açıklama sütunu tabloda gösterilmeyecek */
+    .col-description {
+      display: none;
+    }
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .action-buttons button {
+      padding: 8px 12px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #008577;
+      color: #fff;
+      transition: background 0.3s;
+      font-size: 14px;
+    }
+    .action-buttons button:hover {
+      background: #006f63;
+    }
+    .message {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    /* Modal stilleri */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+      padding-top: 100px;
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 5px;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close:hover, .close:focus {
+      color: black;
+      text-decoration: none;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 4px;
+      color: #555;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group textarea {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    #editPhoto {
+      margin-top: 6px;
+    }
+    #editPreview img {
+      max-width: 100px;
+      margin-top: 6px;
+      border-radius: 3px;
+    }
+    /* Küçük ekranlar için */
+    @media screen and (max-width: 600px) {
+      th, td {
+        padding: 8px;
+        font-size: 12px;
+      }
+      .action-buttons button {
+        padding: 6px 8px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin Panel - Ödülleri Düzenle</h1>
+  </header>
+  <nav>
+    <a href="main.html">Ana Sayfa</a>
+    <a href="question.html">Soru Yükle</a>
+    <a href="approve.html">Blog Onay Paneli</a>
+    <a href="upload.html">Blog Yükle</a>
+    <a href="editQuestions.html">Soru Düzenle</a>
+    <a href="blockedUsers.html">Engellenenler</a>
+    <a href="odulYukle.html">Ödül Yükle</a>
+    <a href="odulDuzenle.html">Ödülleri Düzenle</a>
+    <a href="odulAlanlar.html">Ödül Alanlar</a>
+    <a href="#" onclick="logout()">Çıkış Yap</a>
+  </nav>
+  <div class="container">
+    <h2>Ödülleri Düzenle / Sil</h2>
+    <table id="rewardsTable">
+      <thead>
+        <tr>
+          <th>Fotoğraf</th>
+          <th>Başlık</th>
+          <!-- Açıklama sütunu tabloda gösterilmeyecek -->
+          <th>Fiyat (Token)</th>
+          <th>İşlemler</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Ödül satırları buraya eklenecek -->
+      </tbody>
+    </table>
+    <div class="message" id="rewardEditMessage"></div>
+  </div>
+
+  <!-- Düzenleme Modalı -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Ödülü Düzenle</h2>
+      <form id="editForm">
+        <input type="hidden" id="editRewardId">
+        <div class="form-group">
+          <label for="editTitle">Başlık:</label>
+          <input type="text" id="editTitle" required>
+        </div>
+        <div class="form-group">
+          <label for="editDescription">Açıklama:</label>
+          <textarea id="editDescription" rows="4" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="editPrice">Fiyat (Token):</label>
+          <input type="number" id="editPrice" required>
+        </div>
+        <div class="form-group">
+          <label for="editPhoto">Yeni Fotoğraf (isteğe bağlı):</label>
+          <input type="file" id="editPhoto" accept="image/*">
+          <div id="editPreview"></div>
+        </div>
+        <button type="submit" class="btn-edit">Güncelle</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase SDK (v8) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <script>
+    // Firebase yapılandırmanız:
+    var firebaseConfig = {
+      apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
+      authDomain: "futbolmobil-7be36.firebaseapp.com",
+      databaseURL: "https://futbolmobil-7be36-default-rtdb.firebaseio.com",
+      projectId: "futbolmobil-7be36",
+      storageBucket: "futbolmobil-7be36.firebasestorage.app",
+      messagingSenderId: "311578958726",
+      appId: "1:311578958726:web:486cb815a7674702af2a07",
+      measurementId: "G-NE0LTTF1EP"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    const storage = firebase.storage();
+    
+    auth.onAuthStateChanged(user => { 
+      if (!user) { window.location.href = "index.html"; }
+    });
+
+    // Ödülleri yükleyen fonksiyon
+    const rewardsRef = db.ref('gifts');
+    function loadRewards() {
+      rewardsRef.on('value', snapshot => {
+        const tbody = document.getElementById('rewardsTable').querySelector('tbody');
+        tbody.innerHTML = "";
+        snapshot.forEach(giftSnap => {
+          const gift = giftSnap.val();
+          const giftId = giftSnap.key;
+          const tr = document.createElement('tr');
+          
+          // Fotoğraf
+          const tdPhoto = document.createElement('td');
+          const img = document.createElement('img');
+          img.src = gift.imageUrl || "";
+          img.style.width = "100px";
+          tdPhoto.appendChild(img);
+          tr.appendChild(tdPhoto);
+          
+          // Başlık
+          const tdTitle = document.createElement('td');
+          tdTitle.textContent = gift.title;
+          tr.appendChild(tdTitle);
+          
+          // Fiyat
+          const tdPrice = document.createElement('td');
+          tdPrice.textContent = gift.price;
+          tr.appendChild(tdPrice);
+          
+          // İşlemler
+          const tdActions = document.createElement('td');
+          const editBtn = document.createElement('button');
+          editBtn.textContent = "Düzenle";
+          editBtn.className = "btn-edit";
+          editBtn.onclick = () => openEditModal(giftId, gift);
+          tdActions.appendChild(editBtn);
+          const deleteBtn = document.createElement('button');
+          deleteBtn.textContent = "Sil";
+          deleteBtn.className = "btn-delete";
+          deleteBtn.onclick = () => deleteReward(giftId);
+          tdActions.appendChild(deleteBtn);
+          tr.appendChild(tdActions);
+          
+          tbody.appendChild(tr);
+        });
+      });
+    }
+    loadRewards();
+
+    // Ödül silme fonksiyonu
+    function deleteReward(giftId) {
+      if (confirm("Bu ödülü silmek istediğinize emin misiniz?")) {
+        rewardsRef.child(giftId).remove()
+          .then(() => { alert("Ödül başarıyla silindi."); })
+          .catch(error => { alert("Ödül silinirken hata: " + error.message); });
+      }
+    }
+
+    // Modal ve düzenleme işlemleri
+    const modal = document.getElementById("editModal");
+    const spanClose = document.getElementsByClassName("close")[0];
+    spanClose.onclick = function() { modal.style.display = "none"; }
+    window.onclick = function(event) { if (event.target == modal) { modal.style.display = "none"; } }
+    function openEditModal(giftId, gift) {
+      document.getElementById("editRewardId").value = giftId;
+      document.getElementById("editTitle").value = gift.title;
+      document.getElementById("editDescription").value = gift.description;
+      document.getElementById("editPrice").value = gift.price;
+      document.getElementById("editPreview").innerHTML = gift.imageUrl ? `<img src="${gift.imageUrl}" alt="Ödül Fotoğrafı">` : "";
+      modal.style.display = "block";
+    }
+
+    const editPhotoInput = document.getElementById("editPhoto");
+    editPhotoInput.addEventListener('change', function() {
+      const file = this.files[0];
+      const previewDiv = document.getElementById("editPreview");
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewDiv.innerHTML = `<img src="${e.target.result}" alt="Yeni Ödül Fotoğrafı">`;
+        }
+        reader.readAsDataURL(file);
+      } else {
+        previewDiv.innerHTML = "";
+      }
+    });
+
+    document.getElementById("editForm").addEventListener('submit', function(e) {
+      e.preventDefault();
+      const giftId = document.getElementById("editRewardId").value;
+      const updatedTitle = document.getElementById("editTitle").value;
+      const updatedDescription = document.getElementById("editDescription").value;
+      const updatedPrice = parseInt(document.getElementById("editPrice").value);
+      const newPhotoFile = document.getElementById("editPhoto").files[0];
+      if (newPhotoFile) {
+        const storageRef = storage.ref();
+        const fileRef = storageRef.child('rewards/' + Date.now() + '_' + newPhotoFile.name);
+        fileRef.put(newPhotoFile)
+          .then(snapshot => snapshot.ref.getDownloadURL())
+          .then(downloadURL => {
+            updateRewardData(giftId, updatedTitle, updatedDescription, updatedPrice, downloadURL);
+          })
+          .catch(error => { alert("Fotoğraf güncellenirken hata: " + error.message); });
+      } else {
+        updateRewardData(giftId, updatedTitle, updatedDescription, updatedPrice, null);
+      }
+    });
+
+    function updateRewardData(giftId, title, description, price, newImageUrl) {
+      let updateData = {
+        title: title,
+        description: description,
+        price: price
+      };
+      if (newImageUrl) {
+        updateData.imageUrl = newImageUrl;
+      }
+      rewardsRef.child(giftId).update(updateData, function(error) {
+        if (error) {
+          alert("Ödül güncellenirken hata: " + error.message);
+        } else {
+          alert("Ödül başarıyla güncellendi.");
+          modal.style.display = "none";
+        }
+      });
+    }
+
+    function logout() {
+      auth.signOut().then(() => { window.location.href = "index.html"; });
+    }
+  </script>
+</body>
+</html>
