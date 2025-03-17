@@ -1,10 +1,8 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Tek Panel - Admin İşlemleri</title>
-
-  <!-- Basit bir stillendirme; isterseniz geliştirip özelleştirebilirsiniz -->
+  <meta charset="UTF-8">
+  <title>Giriş - Mobil Uygulama</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,183 +10,52 @@
       margin: 0;
       padding: 0;
     }
-    header {
-      background: #008577;
-      color: #fff;
-      padding: 10px;
-      text-align: center;
-    }
-    nav {
-      background: #eee;
-      padding: 10px;
-      text-align: center;
-    }
-    nav button {
-      margin: 0 5px;
-      padding: 8px 12px;
-      border: none;
-      cursor: pointer;
-      border-radius: 4px;
-      background: #ccc;
-    }
-    nav button:hover {
-      background: #bbb;
-    }
-    .hidden {
-      display: none;
-    }
     .container {
-      max-width: 900px;
-      margin: 20px auto;
+      max-width: 400px;
+      margin: 100px auto;
       background: #fff;
       padding: 20px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    h1, h2 {
-      text-align: center;
-    }
-    /* Form Elemanları */
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-    input, select, textarea {
+    h2 { text-align: center; }
+    label { display: block; margin-top: 10px; }
+    input {
       width: 100%;
-      padding: 8px;
-      margin-top: 4px;
+      padding: 10px;
+      margin: 10px 0;
       border: 1px solid #ccc;
       border-radius: 4px;
-      box-sizing: border-box;
     }
     button {
-      margin-top: 10px;
-      padding: 10px 15px;
+      width: 100%;
+      padding: 10px;
       background: #008577;
       color: #fff;
       border: none;
       border-radius: 4px;
       cursor: pointer;
     }
-    button:hover {
-      background: #006f63;
-    }
-    .message {
-      text-align: center;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    /* Blog listesi, soru listesi vs. */
-    .blog-item, .item-box {
-      border: 1px solid #ccc;
-      padding: 12px;
-      margin-bottom: 12px;
-      border-radius: 4px;
-      background: #fafafa;
-    }
-    .blog-title {
-      font-weight: bold;
-      font-size: 18px;
-    }
-    .blog-content {
-      margin-top: 8px;
-    }
-    .blog-meta {
-      margin-top: 8px;
-      font-size: 12px;
-      color: #666;
-    }
+    button:hover { background: #006f63; }
+    .message { text-align: center; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <!-- ÜST BÖLÜM -->
-  <header>
-    <h1>Mobil Uygulama - Tek Panel</h1>
-  </header>
-
-  <!-- NAVİGASYON - Giriş yaptıktan sonra aktif oluyor -->
-  <nav id="navBar" class="hidden">
-    <button onclick="showSection('questionSection')">Soru Yükle</button>
-    <button onclick="showSection('approveSection')">Blog Onay Paneli</button>
-    <button onclick="showSection('uploadSection')">Blog Yükle</button>
-    <button onclick="logout()">Çıkış Yap</button>
-  </nav>
-
-  <!-- Giriş/Kayıt Ekranı -->
-  <div id="authSection" class="container">
+  <div class="container">
     <h2>Giriş / Kayıt</h2>
     <label for="email">E-posta:</label>
-    <input type="email" id="email" />
-
+    <input type="email" id="email" required>
     <label for="password">Şifre:</label>
-    <input type="password" id="password" />
-
+    <input type="password" id="password" required>
     <button onclick="login()">Giriş Yap</button>
-    <div id="authMessage" class="message"></div>
+    <div class="message" id="authMessage"></div>
   </div>
 
-  <!-- Soru Yükleme Bölümü -->
-  <div id="questionSection" class="container hidden">
-    <h2>Soru Yükleme Paneli</h2>
-    <form id="questionForm">
-      <label for="questionText">Soru Metni:</label>
-      <textarea id="questionText" required></textarea>
-      
-      <label for="option1">Şık 1:</label>
-      <input type="text" id="option1" required>
-      
-      <label for="option2">Şık 2:</label>
-      <input type="text" id="option2" required>
-      
-      <label for="option3">Şık 3:</label>
-      <input type="text" id="option3" required>
-      
-      <label for="option4">Şık 4:</label>
-      <input type="text" id="option4" required>
-      
-      <label for="correctAnswer">Doğru Cevap (Şık numarası: 1-4):</label>
-      <select id="correctAnswer" required>
-        <option value="1">Şık 1</option>
-        <option value="2">Şık 2</option>
-        <option value="3">Şık 3</option>
-        <option value="4">Şık 4</option>
-      </select>
-      
-      <button type="submit">Soruyu Yükle</button>
-    </form>
-    <div class="message" id="questionMessage"></div>
-  </div>
-
-  <!-- Blog Onaylama Bölümü (Onay Bekleyenleri Listeleme) -->
-  <div id="approveSection" class="container hidden">
-    <h2>Onay Bekleyen Blog Yazıları</h2>
-    <div id="blogsList"></div>
-    <div class="message" id="approveMessage"></div>
-  </div>
-
-  <!-- Blog Yükleme Bölümü -->
-  <div id="uploadSection" class="container hidden">
-    <h2>Blog Yazısı Yükle</h2>
-    <form id="blogForm">
-      <label for="title">Başlık:</label>
-      <input type="text" id="title" required>
-      
-      <label for="content">İçerik (HTML formatında):</label>
-      <textarea id="content" rows="8" required></textarea>
-      
-      <button type="submit">Yükle</button>
-    </form>
-    <div class="message" id="uploadMessage"></div>
-  </div>
-
-  <!-- Firebase SDK (compat modunda) -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-
   <script>
-    /*******************************************
-     * 1) Firebase Konfigürasyonu ve Başlatma
-     *******************************************/
+    // Firebase konfigürasyonu
     const firebaseConfig = {
       apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
       authDomain: "futbolmobil-7be36.firebaseapp.com",
@@ -199,34 +66,9 @@
       appId: "1:311578958726:web:486cb815a7674702af2a07",
       measurementId: "G-NE0LTTF1EP"
     };
-    // Firebase'i başlat
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const db = firebase.database();
 
-    /*******************************************
-     * 2) Auth - Giriş/Kayıt/Çıkış İşlemleri
-     *******************************************/
-    // Kullanıcı girişini izlemek için onAuthStateChanged kullanıyoruz.
-    auth.onAuthStateChanged((user) => {
-      const authSection = document.getElementById("authSection");
-      const navBar = document.getElementById("navBar");
-      if (user) {
-        // Kullanıcı giriş yaptı
-        authSection.classList.add("hidden");
-        navBar.classList.remove("hidden");
-        // Varsayılan olarak Soru Yükleme bölümünü gösterelim
-        showSection('questionSection');
-      } else {
-        // Kullanıcı çıkış yaptı
-        authSection.classList.remove("hidden");
-        navBar.classList.add("hidden");
-        // Tüm panelleri gizle
-        hideAllSections();
-      }
-    });
-
-    // Giriş Yap
     function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
@@ -235,175 +77,13 @@
         .then(() => {
           authMessage.style.color = "green";
           authMessage.innerText = "Giriş başarılı!";
+          window.location.href = "main.html";
         })
         .catch((error) => {
           authMessage.style.color = "red";
           authMessage.innerText = "Giriş hatası: " + error.message;
         });
     }
-
-    // Kayıt Ol
-
-
-    // Çıkış Yap
-    function logout() {
-      auth.signOut().then(() => {
-        // Oturum kapandığında ilgili UI güncellenir (onAuthStateChanged ile)
-      });
-    }
-
-    /*******************************************
-     * 3) Sayfa Geçişleri (Sekmeler)
-     *******************************************/
-    function showSection(sectionId) {
-      hideAllSections();
-      document.getElementById(sectionId).classList.remove("hidden");
-    }
-
-    function hideAllSections() {
-      document.getElementById("questionSection").classList.add("hidden");
-      document.getElementById("approveSection").classList.add("hidden");
-      document.getElementById("uploadSection").classList.add("hidden");
-    }
-
-    /*******************************************
-     * 4) Soru Yükleme İşlemleri
-     *******************************************/
-    const questionForm = document.getElementById('questionForm');
-    questionForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const questionText = document.getElementById('questionText').value;
-      const option1 = document.getElementById('option1').value;
-      const option2 = document.getElementById('option2').value;
-      const option3 = document.getElementById('option3').value;
-      const option4 = document.getElementById('option4').value;
-      const correctAnswerIndex = document.getElementById('correctAnswer').value;
-      const questionMessage = document.getElementById('questionMessage');
-
-      let correctAnswer;
-      if (correctAnswerIndex === "1") {
-        correctAnswer = option1;
-      } else if (correctAnswerIndex === "2") {
-        correctAnswer = option2;
-      } else if (correctAnswerIndex === "3") {
-        correctAnswer = option3;
-      } else if (correctAnswerIndex === "4") {
-        correctAnswer = option4;
-      }
-
-      const newQuestion = {
-        questionText: questionText,
-        option1: option1,
-        option2: option2,
-        option3: option3,
-        option4: option4,
-        correctAnswer: correctAnswer
-      };
-
-      // Firebase'e yaz
-      db.ref('questions').push(newQuestion, function(error) {
-        if (error) {
-          questionMessage.style.color = "red";
-          questionMessage.innerText = "Soru yüklenirken hata: " + error;
-        } else {
-          questionMessage.style.color = "green";
-          questionMessage.innerText = "Soru başarıyla yüklendi!";
-          questionForm.reset();
-        }
-      });
-    });
-
-    /*******************************************
-     * 5) Blog Onaylama (Approved = false) 
-     *    Blogları Listele ve Onayla
-     *******************************************/
-    const blogsRef = db.ref('blogs');
-
-    // Onay bekleyen blogları yükle (approved == false).
-    function loadUnapprovedBlogs() {
-      blogsRef.orderByChild("approved").equalTo(false).on("value", function(snapshot) {
-        const blogsListDiv = document.getElementById("blogsList");
-        blogsListDiv.innerHTML = "";
-        snapshot.forEach(function(childSnapshot) {
-          const blog = childSnapshot.val();
-          // Her blog için bir div oluştur
-          const blogDiv = document.createElement("div");
-          blogDiv.className = "blog-item";
-          blogDiv.innerHTML = `
-            <div class="blog-title">${blog.title}</div>
-            <div class="blog-content">${blog.content}</div>
-            <div class="blog-meta">
-              Gönderen: ${blog.postedBy || "Bilinmiyor"} | 
-              Tarih: ${ new Date(blog.timestamp).toLocaleString() }
-            </div>
-          `;
-          // Onay butonu
-          const approveBtn = document.createElement("button");
-          approveBtn.textContent = "Onayla";
-          approveBtn.onclick = function() {
-            approveBlog(blog.id);
-          };
-          blogDiv.appendChild(approveBtn);
-
-          blogsListDiv.appendChild(blogDiv);
-        });
-      });
-    }
-    loadUnapprovedBlogs(); // Sayfa açılışında bir kez dinliyoruz
-
-    // Blog yazısını onaylama (approved: true yapma)
-    function approveBlog(blogId) {
-      const blogRef = db.ref('blogs/' + blogId);
-      blogRef.update({ approved: true }, function(error) {
-        const msgDiv = document.getElementById("approveMessage");
-        if(error) {
-          msgDiv.style.color = "red";
-          msgDiv.textContent = "Onaylama başarısız: " + error.message;
-        } else {
-          msgDiv.style.color = "green";
-          msgDiv.textContent = "Blog yazısı onaylandı.";
-        }
-      });
-    }
-
-    /*******************************************
-     * 6) Blog Yükleme İşlemleri
-     *******************************************/
-    const blogForm = document.getElementById('blogForm');
-    blogForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-
-      const title = document.getElementById('title').value;
-      const content = document.getElementById('content').value;
-      const timestamp = Date.now();
-      const blogId = String(timestamp);
-
-      // Her blog otomatik onaylı ya da onaysız kaydedebilirsiniz.
-      // Burada örnek olarak "approved: true" dedik. 
-      // İsterseniz false yapıp önce onaylayabilirsiniz.
-      const newBlog = {
-        id: blogId,
-        title: title,
-        content: content,
-        timestamp: timestamp,
-        likes: 0,
-        dislikes: 0,
-        postedBy: "Admin",
-        approved: true
-      };
-
-      db.ref('blogs/' + blogId).set(newBlog, function(error) {
-        const uploadMessage = document.getElementById('uploadMessage');
-        if (error) {
-          uploadMessage.style.color = "red";
-          uploadMessage.textContent = "Yükleme başarısız: " + error.message;
-        } else {
-          uploadMessage.style.color = "green";
-          uploadMessage.textContent = "Blog yazısı başarıyla yüklendi!";
-          blogForm.reset();
-        }
-      });
-    });
   </script>
 </body>
 </html>
