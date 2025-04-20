@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel - Futbolcu Yönetimi</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    h1 { text-align: center; }
+    form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    input[type="text"], input[type="number"] { padding: 8px; border: 1px solid #ccc; border-radius: 3px; }
+    input[type="file"] { }
+    button { padding: 10px; background: #28a745; color: #fff; border: none; border-radius: 3px; cursor: pointer; }
+    button:hover { background: #218838; }
+    .player-list { display: flex; flex-direction: column; gap: 10px; }
+    .player-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: #fafafa; border: 1px solid #ddd; border-radius: 3px; }
+    .player-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 50%; }
+    .player-info { flex-grow: 1; }
+    .delete-btn { padding: 5px 10px; background: #dc3545; color: #fff; border: none; border-radius: 3px; cursor: pointer; }
+    .delete-btn:hover { background: #c82333; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Futbolcu Yönetim Paneli</h1>
+    <form id="playerForm">
+      <label>Fotoğraf:<input type="file" id="photo" accept="image/*" required></label>
+      <label>Ad Soyad:<input type="text" id="name" placeholder="Futbolcu Adı" required></label>
+      <label>Doğum Yılı:<input type="number" id="year" placeholder="YYYY" min="1900" max="2025" required></label>
+      <button type="submit">Ekle</button>
+    </form>
+    <div class="player-list" id="playerList"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <script>
+    // TODO: kendi firebaseConfig ile değiştirin
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
+      authDomain: "futbolmobil-7be36.firebaseapp.com",
+      databaseURL: "https://futbolmobil-7be36-default-rtdb.firebaseio.com",
+      projectId: "futbolmobil-7be36",
+      storageBucket: "futbolmobil-7be36.firebasestorage.app",
+      messagingSenderId: "311578958726",
+      appId: "1:311578958726:web:486cb815a7674702af2a07",
+      measurementId: "G-NE0LTTF1EP"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const storage = firebase.storage();
+    const database = firebase.database();
+
+    const form = document.getElementById('playerForm');
+    const playerList = document.getElementById('playerList');
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const file = document.getElementById('photo').files[0];
+      const name = document.getElementById('name').value.trim();
+      const year = document.getElementById('year').value;
+
+      if (!file || !name || !year) return;
+      const storageRef = storage.ref('players/' + Date.now() + '_' + file.name);
+      storageRef.put(file)
+        .then(() => storageRef.getDownloadURL())
+        .then(url => {
+          const newKey = database.ref('players').push().key;
+          database.ref('players/' + newKey).set({ name, year, photoUrl: url });
+          form.reset();
+        });
+    });
+
+    function loadPlayers() {
+      database.ref('players').on('value', snapshot => {
+        playerList.innerHTML = '';
+        snapshot.forEach(child => {
+          const data = child.val();
+          const key = child.key;
+
+          const item = document.createElement('div');
+          item.className = 'player-item';
+          const img = document.createElement('img');
+          img.src = data.photoUrl;
+          const info = document.createElement('div');
+          info.className = 'player-info';
+          info.innerHTML = `<strong>${data.name}</strong><br>Doğum Yılı: ${data.year}`;
+
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'Sil';
+          delBtn.className = 'delete-btn';
+          delBtn.onclick = () => {
+            if (confirm('Silinsin mi?')) {
+              database.ref('players/' + key).remove();
+              storage.refFromURL(data.photoUrl).delete();
+            }
+          };
+
+          item.appendChild(img);
+          item.appendChild(info);
+          item.appendChild(delBtn);
+          playerList.appendChild(item);
+        });
+      });
+    }
+
+    loadPlayers();
+  </script>
+</body>
+</html>
