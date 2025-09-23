@@ -24,21 +24,45 @@
       margin: 24px;
     }
     h1 { text-align: center; color: #333; }
+    nav a {
+      margin-right: 8px;
+      font-size: 14px;
+      color: #6200EE;
+      text-decoration: none;
+    }
+    nav a:hover { text-decoration: underline; }
     form > div { margin-bottom: 16px; }
     label { display: block; margin-bottom: 4px; font-weight: bold; color: #555; }
     input[type="text"], input[type="number"], input[type="file"] {
       width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
     }
-    button {
+    button[type="submit"] {
       width: 100%; padding: 12px; background: #6200EE; border: none; color: #fff;
       font-size: 16px; border-radius: 4px; cursor: pointer;
     }
-    button:hover { background: #4500B5; }
+    button[type="submit"]:hover { background: #4500B5; }
     .status {
       margin-top: 12px; text-align: center; color: #333;
     }
     #listContainer { margin-top: 32px; }
-    #list img { vertical-align: middle; }
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 8px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+    }
+    .card img {
+      width: 60px; height: 60px; object-fit: cover;
+      border-radius: 4px; margin-right: 12px;
+    }
+    .card button {
+      margin-left: auto; padding: 6px 12px;
+      background: #d32f2f; border: none; color: #fff;
+      border-radius: 4px; cursor: pointer;
+    }
   </style>
   <!-- Firebase Compat SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -48,17 +72,33 @@
 <body>
   <div class="container">
     <h1>Transfer Yönetimi</h1>
+    <nav>
+      <a href="main.html">Ana Sayfa</a>
+      <a href="question.html">Soru Yükle</a>
+      <a href="approve.html">Blog Onay</a>
+      <a href="upload.html">Blog Yükle</a>
+      <a href="editQuestions.html">Soru Düzenle</a>
+      <a href="blockedUsers.html">Engellenenler</a>
+      <a href="odulYukle.html">Ödül Yükle</a>
+      <a href="yastahmin.html">Yaş Oyunu</a>
+      <a href="transfertahmin.html">Transfer Oyunu</a>
+      <a href="puzlle.html">Puzzle Oyunu</a>
+      <a href="futbolcubil.html">Futbolcu Bil</a>
+      <a href="#" onclick="logout()">Çıkış</a>
+    </nav>
+
     <form id="transferForm">
       <div><label for="playerName">Futbolcu Adı</label><input type="text" id="playerName" required /></div>
       <div><label for="oldClub">Eski Kulüp</label><input type="text" id="oldClub" required /></div>
       <div><label for="newClub">Yeni Kulüp</label><input type="text" id="newClub" required /></div>
       <div><label for="transferYear">Transfer Yılı</label><input type="number" id="transferYear" min="1900" max="2100" required /></div>
-      <div><label for="opt1">Seçenek 1 (Yanlış)</label><input type="number" id="opt1" min="1900" max="2100" required /></div>
-      <div><label for="opt2">Seçenek 2 (Yanlış)</label><input type="number" id="opt2" min="1900" max="2100" required /></div>
+      <div><label for="opt1">Şık 1 (Yanlış)</label><input type="number" id="opt1" min="1900" max="2100" required /></div>
+      <div><label for="opt2">Şık 2 (Yanlış)</label><input type="number" id="opt2" min="1900" max="2100" required /></div>
       <div><label for="photo">Fotoğraf</label><input type="file" id="photo" accept="image/*" required /></div>
       <button type="submit">Kaydet</button>
     </form>
     <div class="status" id="status"></div>
+
     <div id="listContainer">
       <h2>Kayıtlı Transferler</h2>
       <div id="list"></div>
@@ -66,7 +106,7 @@
   </div>
 
   <script>
-    // Firebase projenizin yapılandırmasıyla değiştirin
+    // Firebase yapılandırması
     const firebaseConfig = {
       apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
       authDomain: "futbolmobil-7be36.firebaseapp.com",
@@ -74,38 +114,54 @@
       projectId: "futbolmobil-7be36",
       storageBucket: "futbolmobil-7be36.appspot.com",
       messagingSenderId: "311578958726",
-      appId: "1:311578958726:web:486cb815a7674702af2a07"
+      appId: "1:311578958726:web:61866a189b73ba95af2a07",
+      measurementId: "G-5837EDDD26"
     };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+
+    const db      = firebase.database();
     const storage = firebase.storage();
 
-    const form = document.getElementById('transferForm');
-    const statusDiv = document.getElementById('status');
-    const listDiv = document.getElementById('list');
+    const form     = document.getElementById('transferForm');
+    const statusEl = document.getElementById('status');
+    const listEl   = document.getElementById('list');
+
+    // Görsel sıkıştırma
+    function compressImage(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width  = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob(blob => {
+            if (blob) resolve(blob);
+            else reject(new Error('Blob oluşmadı'));
+          }, 'image/jpeg', 0.2); // kalite %20
+        };
+        img.onerror = e => reject(e);
+        img.src = URL.createObjectURL(file);
+      });
+    }
 
     // Transferleri listele
     function loadTransfers() {
       db.ref('transfers').on('value', snapshot => {
-        listDiv.innerHTML = '';
+        listEl.innerHTML = '';
         snapshot.forEach(child => {
           const data = child.val();
-          const key = child.key;
-          const item = document.createElement('div');
-          item.style.border = '1px solid #ccc';
-          item.style.padding = '8px';
-          item.style.margin = '8px 0';
-          item.style.borderRadius = '4px';
+          const key  = child.key;
+
+          const card = document.createElement('div');
+          card.className = 'card';
 
           const img = document.createElement('img');
           img.src = data.photoURL;
-          img.style.width = '60px';
-          img.style.height = '60px';
-          img.style.objectFit = 'cover';
-          img.style.borderRadius = '4px';
-          img.style.marginRight = '8px';
+          img.alt = 'Oyuncu Foto';
 
-          const info = document.createElement('span');
+          const info = document.createElement('div');
           info.innerHTML = `
             <strong>${data.name}</strong><br>
             ${data.oldClub} → ${data.newClub}<br>
@@ -115,24 +171,18 @@
 
           const delBtn = document.createElement('button');
           delBtn.textContent = 'Sil';
-          delBtn.style.marginLeft = '12px';
-          delBtn.style.background = '#d32f2f';
-          delBtn.style.border = 'none';
-          delBtn.style.color = '#fff';
-          delBtn.style.padding = '4px 8px';
-          delBtn.style.cursor = 'pointer';
           delBtn.onclick = () => {
-            if (confirm('Bu transferi silmek istediğinize emin misiniz?')) {
-              db.ref('transfers/' + key).remove()
-                .then(() => { statusDiv.textContent = 'Silindi.'; })
-                .catch(err => { statusDiv.textContent = 'Hata: ' + err.message; });
-            }
+            if (!confirm('Bu transferi silmek istediğinize emin misiniz?')) return;
+            // Storage’dan sil
+            storage.refFromURL(data.photoURL).delete().catch(e => console.warn(e));
+            // DB’den sil
+            db.ref('transfers/' + key).remove();
           };
 
-          item.appendChild(img);
-          item.appendChild(info);
-          item.appendChild(delBtn);
-          listDiv.appendChild(item);
+          card.appendChild(img);
+          card.appendChild(info);
+          card.appendChild(delBtn);
+          listEl.appendChild(card);
         });
       });
     }
@@ -140,35 +190,42 @@
     // Form gönderme
     form.addEventListener('submit', async e => {
       e.preventDefault();
-      statusDiv.textContent = 'Yükleniyor...';
+      statusEl.textContent = 'Yükleniyor...';
 
-      const name = document.getElementById('playerName').value.trim();
-      const oldClub = document.getElementById('oldClub').value.trim();
-      const newClub = document.getElementById('newClub').value.trim();
-      const year = parseInt(document.getElementById('transferYear').value, 10);
-      const opt1 = parseInt(document.getElementById('opt1').value, 10);
-      const opt2 = parseInt(document.getElementById('opt2').value, 10);
-      const file = document.getElementById('photo').files[0];
+      const name      = document.getElementById('playerName').value.trim();
+      const oldClub   = document.getElementById('oldClub').value.trim();
+      const newClub   = document.getElementById('newClub').value.trim();
+      const year      = parseInt(document.getElementById('transferYear').value, 10);
+      const opt1      = parseInt(document.getElementById('opt1').value, 10);
+      const opt2      = parseInt(document.getElementById('opt2').value, 10);
+      const file      = document.getElementById('photo').files[0];
 
       try {
-        // Fotoğrafı Storage'a yükle
+        // Görseli sıkıştır ve yükle
+        const blob       = await compressImage(file);
         const storageRef = storage.ref('players/' + Date.now() + '_' + file.name);
-        const snapshot = await storageRef.put(file);
-        const photoURL = await snapshot.ref.getDownloadURL();
+        const snap       = await storageRef.put(blob);
+        const photoURL   = await snap.ref.getDownloadURL();
 
-        // Realtime DB'ye kaydet
+        // Veritabanına kaydet
         const newKey = db.ref('transfers').push().key;
-        await db.ref('transfers/' + newKey).set({ name, oldClub, newClub, year, options: [opt1, opt2], photoURL });
+        await db.ref('transfers/' + newKey).set({
+          name, oldClub, newClub, year,
+          options: [opt1, opt2],
+          photoURL
+        });
 
-        statusDiv.textContent = 'Transfer başarıyla kaydedildi.';
+        statusEl.textContent = 'Transfer başarıyla kaydedildi.';
         form.reset();
       } catch (err) {
         console.error(err);
-        statusDiv.textContent = 'Hata: ' + err.message;
+        statusEl.textContent = 'Hata: ' + err.message;
       }
     });
 
-    window.onload = loadTransfers;
+    window.onload = () => {
+      loadTransfers();
+    };
   </script>
 </body>
 </html>

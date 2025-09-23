@@ -2,34 +2,54 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Panel - Futbolcu Yönetimi</title>
   <style>
     body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
-    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 5px;
+                 box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     h1 { text-align: center; }
+    nav a { margin-right: 8px; font-size: 14px; color: #6200EE; text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
     form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-    input[type="text"], input[type="number"] { padding: 8px; border: 1px solid #ccc; border-radius: 3px; }
-    input[type="file"] { }
-    button { padding: 10px; background: #28a745; color: #fff; border: none; border-radius: 3px; cursor: pointer; }
-    button:hover { background: #218838; }
+    input[type="text"], input[type="number"], input[type="file"] {
+      padding: 8px; border: 1px solid #ccc; border-radius: 3px; }
+    button[type="submit"] { padding: 10px; background: #28a745; color: #fff; border: none;
+                              border-radius: 3px; cursor: pointer; }
+    button[type="submit"]:hover { background: #218838; }
+    .status { text-align: center; margin-top: 12px; color: #333; }
     .player-list { display: flex; flex-direction: column; gap: 10px; }
-    .player-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: #fafafa; border: 1px solid #ddd; border-radius: 3px; }
+    .player-item { display: flex; align-items: center; gap: 10px; padding: 10px;
+                   background: #fafafa; border: 1px solid #ddd; border-radius: 3px; }
     .player-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 50%; }
     .player-info { flex-grow: 1; }
-    .delete-btn { padding: 5px 10px; background: #dc3545; color: #fff; border: none; border-radius: 3px; cursor: pointer; }
+    .delete-btn { padding: 5px 10px; background: #dc3545; color: #fff; border: none;
+                  border-radius: 3px; cursor: pointer; }
     .delete-btn:hover { background: #c82333; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Futbolcu Yönetim Paneli</h1>
+    <nav>
+      <a href="main.html">Ana Sayfa</a>
+      <a href="question.html">Soru Yükle</a>
+      <a href="approve.html">Onay Paneli</a>
+      <a href="upload.html">Blog Yükle</a>
+      <a href="editQuestions.html">Soru Düzenle</a>
+      <a href="blockedUsers.html">Engellenenler</a>
+      <a href="yastahmin.html">Yaş Oyunu</a>
+      <a href="transfertahmin.html">Transfer Oyunu</a>
+      <a href="puzlle.html">Puzzle Oyunu</a>
+      <a href="futbolcubil.html">Futbolcu Bil</a>
+    </nav>
     <form id="playerForm">
       <label>Fotoğraf:<input type="file" id="photo" accept="image/*" required></label>
       <label>Ad Soyad:<input type="text" id="name" placeholder="Futbolcu Adı" required></label>
       <label>Doğum Yılı:<input type="number" id="year" placeholder="YYYY" min="1900" max="2025" required></label>
       <button type="submit">Ekle</button>
     </form>
+    <div class="status" id="status"></div>
     <div class="player-list" id="playerList"></div>
   </div>
 
@@ -38,39 +58,67 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <script>
-    // TODO: kendi firebaseConfig ile değiştirin
     const firebaseConfig = {
       apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
       authDomain: "futbolmobil-7be36.firebaseapp.com",
       databaseURL: "https://futbolmobil-7be36-default-rtdb.firebaseio.com",
       projectId: "futbolmobil-7be36",
-      storageBucket: "futbolmobil-7be36.firebasestorage.app",
+      storageBucket: "futbolmobil-7be36.appspot.com",
       messagingSenderId: "311578958726",
       appId: "1:311578958726:web:486cb815a7674702af2a07",
       measurementId: "G-NE0LTTF1EP"
     };
     firebase.initializeApp(firebaseConfig);
-    const storage = firebase.storage();
+    const storage  = firebase.storage();
     const database = firebase.database();
 
-    const form = document.getElementById('playerForm');
+    const form       = document.getElementById('playerForm');
+    const statusEl   = document.getElementById('status');
     const playerList = document.getElementById('playerList');
 
-    form.addEventListener('submit', e => {
+    // Görsel sıkıştırma (en düşük kalite)
+    function compressImage(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width  = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob(blob => {
+            if (blob) resolve(blob);
+            else reject(new Error('Blob oluşmadı'));
+          }, 'image/jpeg', 0.1); // kalite %10
+        };
+        img.onerror = e => reject(e);
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    form.addEventListener('submit', async e => {
       e.preventDefault();
+      statusEl.textContent = 'Yükleniyor...';
+
       const file = document.getElementById('photo').files[0];
       const name = document.getElementById('name').value.trim();
       const year = document.getElementById('year').value;
 
-      if (!file || !name || !year) return;
-      const storageRef = storage.ref('players/' + Date.now() + '_' + file.name);
-      storageRef.put(file)
-        .then(() => storageRef.getDownloadURL())
-        .then(url => {
-          const newKey = database.ref('players').push().key;
-          database.ref('players/' + newKey).set({ name, year, photoUrl: url });
-          form.reset();
-        });
+      try {
+        const blob       = await compressImage(file);
+        const storageRef = storage.ref('players/' + Date.now() + '_' + file.name);
+        const snap       = await storageRef.put(blob);
+        const photoURL   = await snap.ref.getDownloadURL();
+
+        const newKey = database.ref('players').push().key;
+        await database.ref('players/' + newKey).set({ name, year, photoUrl: photoURL });
+
+        statusEl.textContent = 'Oyuncu başarıyla eklendi.';
+        form.reset();
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Hata: ' + err.message;
+      }
     });
 
     function loadPlayers() {
@@ -78,24 +126,25 @@
         playerList.innerHTML = '';
         snapshot.forEach(child => {
           const data = child.val();
-          const key = child.key;
+          const key  = child.key;
 
           const item = document.createElement('div');
           item.className = 'player-item';
+
           const img = document.createElement('img');
           img.src = data.photoUrl;
+
           const info = document.createElement('div');
           info.className = 'player-info';
           info.innerHTML = `<strong>${data.name}</strong><br>Doğum Yılı: ${data.year}`;
 
           const delBtn = document.createElement('button');
-          delBtn.textContent = 'Sil';
           delBtn.className = 'delete-btn';
+          delBtn.textContent = 'Sil';
           delBtn.onclick = () => {
-            if (confirm('Silinsin mi?')) {
-              database.ref('players/' + key).remove();
-              storage.refFromURL(data.photoUrl).delete();
-            }
+            if (!confirm('Silinsin mi?')) return;
+            database.ref('players/' + key).remove();
+            storage.refFromURL(data.photoUrl).delete();
           };
 
           item.appendChild(img);
@@ -106,7 +155,7 @@
       });
     }
 
-    loadPlayers();
+    window.onload = loadPlayers;
   </script>
 </body>
 </html>

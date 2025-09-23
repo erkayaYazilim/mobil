@@ -5,6 +5,8 @@
   <!-- Responsive için viewport -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ana Sayfa - Mobil Uygulama</title>
+  <!-- Font Awesome ikonlar için -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnFq6+2e1K0pYVQ4fQ7lUX5e+5XKp4Y5a1N/jnPyX0CEcEw6X1ZZJ8sqf5+K0+lXK0P0O0N5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     /* Genel reset */
     *, *::before, *::after {
@@ -88,7 +90,7 @@
       margin: 0 10px;
       animation: bounce 0.5s infinite alternate;
       box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      position: relative; /* MF yazısı için eklendi */
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -109,17 +111,20 @@
       }
     }
 
-    /* Toplara farklı animasyon gecikmeleri */
     .ball:nth-child(2) { animation-delay: 0.1s; background: #ff6b6b; }
     .ball:nth-child(3) { animation-delay: 0.2s; background: #4ecdc4; }
   </style>
 </head>
 <body>
-    <div class="loader-container" id="loader">
-        <div class="ball">MF</div>
-        <div class="ball">MF</div>
-        <div class="ball">MF</div>
-      </div>
+  <!-- Dinamik olarak form eklenecek boş div -->
+  <div id="content"></div>
+
+  <div class="loader-container" id="loader">
+    <div class="ball">MF</div>
+    <div class="ball">MF</div>
+    <div class="ball">MF</div>
+  </div>
+
   <header>
     <h1>Mobil Uygulama</h1>
   </header>
@@ -133,19 +138,28 @@
     <a href="odulYukle.html">Ödül Yükle</a>
     <a href="odulDuzenle.html">Ödülleri Düzenle</a>
     <a href="odulAlanlar.html">Ödül Alanlar</a>
-    <a href="yastahmin.html">Yaş  Oyunu</a>
-    <a href="transfertahmin.html">transfer oyunu</a>
+    <a href="#" onclick="showNotificationForm()"><i class="fas fa-bell"></i> Bildirim Gönder</a>
+    <a href="yastahmin.html">Yaş Oyunu</a>
+    <a href="transfertahmin.html">Transfer Oyunu</a>
+    <a href="puzlle.html">Puzzle Oyunu</a>
+    <a href="futbolcubil.html">Futbolcu Bil</a>
     <a href="#" onclick="logout()">Çıkış Yap</a>
   </nav>
+
   <div class="container">
     <h2>Hoşgeldiniz!</h2>
     <p>Bu uygulama, mobil futbol deneyiminizi geliştirmek için tasarlanmıştır.</p>
     <p>Soru, blog ve ödül işlemlerini kolayca gerçekleştirebilirsiniz.</p>
     <p>Lütfen menüden ilgili bölüme geçiş yaparak işlemlerinizi başlatın.</p>
   </div>
+
+  <!-- Firebase SDK'ları -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+    // Firebase yapılandırma
     const firebaseConfig = {
       apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
       authDomain: "futbolmobil-7be36.firebaseapp.com",
@@ -153,18 +167,130 @@
       projectId: "futbolmobil-7be36",
       storageBucket: "futbolmobil-7be36.firebasestorage.app",
       messagingSenderId: "311578958726",
-      appId: "1:311578958726:web:486cb815a7674702af2a07",
+      appId: "1:311578958726:web:486cb8154702af2a07",
       measurementId: "G-NE0LTTF1EP"
     };
+    // Başlat
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const database = firebase.database();  // 🔑 Realtime Database referansı
+
+    // Çıkış yapma fonksiyonu
     function logout() {
       auth.signOut().then(() => { window.location.href = "index.html"; });
     }
+
     // Loader'ı 2.5 saniye sonra kaldır
     setTimeout(() => {
       document.getElementById('loader').remove();
     }, 2500);
+
+    // Bildirim formunu göster
+    function showNotificationForm() {
+      const contentDiv = document.getElementById('content');
+      contentDiv.innerHTML = `
+        <div class="notification-form">
+          <h2>Bildirim Gönderme Formu</h2>
+          <div class="form-group">
+            <label for="notification-title">Başlık:</label>
+            <input type="text" id="notification-title" placeholder="Bildirim başlığını girin...">
+          </div>
+          <div class="form-group">
+            <label for="notification-body">Açıklama:</label>
+            <textarea id="notification-body" placeholder="Bildirim açıklamasını girin..."></textarea>
+          </div>
+          <div class="form-group">
+            <button id="send-notification-btn">Bildirim Gönder</button>
+          </div>
+          <p id="status-message" style="text-align: center;"></p>
+        </div>
+      `;
+      document.getElementById('send-notification-btn').addEventListener('click', sendNotification);
+    }
+
+    // Bildirim gönderme fonksiyonu
+    function sendNotification() {
+      const titleElement = document.getElementById('notification-title');
+      const bodyElement = document.getElementById('notification-body');
+      if (!titleElement || !bodyElement) return console.error("Form elemanı bulunamadı");
+
+      const title = titleElement.value;
+      const body = bodyElement.value;
+      if (!title || !body) return alert('Lütfen başlık ve açıklama doldurun.');
+
+      const notificationData = {
+        title,
+        body,
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        isDisplayed: false
+      };
+      const usersRef = database.ref('users');
+      usersRef.once('value')
+        .then(snapshot => {
+          snapshot.forEach(userSnap => {
+            const userId = userSnap.key;
+            database.ref(`users/${userId}/notifications`).push(notificationData);
+          });
+          document.getElementById('status-message').innerText = 'Bildirim başarıyla gönderildi!';
+        })
+        .catch(err => {
+          console.error('Bildirim hatası:', err);
+          document.getElementById('status-message').innerText = 'Gönderimde hata oluştu.';
+        });
+
+      titleElement.value = '';
+      bodyElement.value = '';
+    }
+
+    const container = document.querySelector('.container');
+  container.insertAdjacentHTML('beforeend', `
+    <hr style="margin:25px 0">
+    <h3 style="text-align:center">İstatistikler</h3>
+    <p id="total-users" style="font-size:18px; text-align:center;">Toplam Uygulamaya Giren Kullanıcı: <strong>…</strong></p>
+    <canvas id="daily-chart" height="120"></canvas>
+  `);
+
+  // Realtime Database’ten verileri çek
+  const statsRef = database.ref('stats');
+
+  // 1) Toplam kullanıcı
+  statsRef.child('totalUsers').once('value')
+    .then(snap => {
+      const total = snap.val() || 0;
+      document.querySelector('#total-users strong').innerText = total;
+    });
+
+  // 2) Son 7 günün günlük kayıtları
+  statsRef.child('dailyRegistrations')
+    .orderByKey()
+    .limitToLast(7)
+    .once('value')
+    .then(snap => {
+      const labels = [];
+      const data   = [];
+      snap.forEach(daySnap => {
+        labels.push(daySnap.key);                             // "YYYY-MM-DD"
+        data.push(daySnap.child('count').val() || 0);
+      });
+
+      // Chart.js ile çiz
+      new Chart(document.getElementById('daily-chart').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Günlük Uygulamaya Giriş',
+            data,
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    })
+    .catch(err => console.error('İstatistik hatası:', err));
   </script>
 </body>
 </html>

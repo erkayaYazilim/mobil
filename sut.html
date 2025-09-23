@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profesyonel Şut Çekme Oyunu</title>
+  <style>
+    /* Genel stil ayarları */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #222;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px;
+    }
+    #ui {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    #scoreboard {
+      margin: 5px 0;
+      font-size: 18px;
+    }
+    #message {
+      font-size: 20px;
+      margin: 10px 0;
+      height: 24px;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      border: none;
+      background: #444;
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 4px;
+    }
+    button:hover {
+      background: #555;
+    }
+    canvas {
+      background: #333;
+      border: 2px solid #fff;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <h1>Profesyonel Şut Çekme Oyunu</h1>
+    <div id="scoreboard">
+      Atış: <span id="attempts">0</span>/<span id="maxAttempts">5</span> &nbsp;&nbsp; Gol: <span id="goals">0</span>
+    </div>
+    <div id="message"></div>
+    <button id="nextShotBtn" style="display:none;">Sonraki Atış</button>
+    <button id="resetGameBtn" style="display:none;">Oyunu Sıfırla</button>
+  </div>
+  <canvas id="gameCanvas" width="800" height="500"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const attemptsDisplay = document.getElementById('attempts');
+    const maxAttemptsDisplay = document.getElementById('maxAttempts');
+    const goalsDisplay = document.getElementById('goals');
+    const messageDisplay = document.getElementById('message');
+    const nextShotBtn = document.getElementById('nextShotBtn');
+    const resetGameBtn = document.getElementById('resetGameBtn');
+
+    let attempts = 0;
+    const maxAttempts = 5;
+    let goals = 0;
+    let gameOver = false;
+
+    // Top nesnesi
+    let ball = {
+      x: canvas.width / 2,
+      y: canvas.height - 50,
+      radius: 10,
+      vx: 0,
+      vy: 0,
+      shot: false
+    };
+
+    // Kale nesnesi
+    const goal = {
+      x: canvas.width / 2 - 75,
+      y: 50,
+      width: 150,
+      height: 10
+    };
+
+    // Kaleci nesnesi: kalenin önünde hareket eder
+    let goalkeeper = {
+      x: canvas.width / 2 - 20,  // başlangıçta kalenin ortasında
+      y: goal.y + goal.height + 5,
+      width: 40,
+      height: 20,
+      vx: 2,
+      direction: 1  // 1: sağa, -1: sola
+    };
+
+    // Fare sürükleme değişkenleri
+    let isDragging = false;
+    let dragStart = null;
+    let currentMousePos = { x: 0, y: 0 };
+
+    // Oyun alanını ve objeleri çizme
+    function drawField() {
+      // Arka plan: degrade
+      let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, '#4a90e2');
+      grad.addColorStop(1, '#145da0');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Kale çizimi
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
+      // Kale direkleri
+      ctx.beginPath();
+      ctx.arc(goal.x, goal.y + goal.height, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(goal.x + goal.width, goal.y + goal.height, 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Kaleci çizimi
+      ctx.fillStyle = '#ff5722';
+      ctx.fillRect(goalkeeper.x, goalkeeper.y, goalkeeper.width, goalkeeper.height);
+
+      // Top çizimi (gölge ve kenarlık eklenmiş)
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.5)";
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = '#ffeb3b';
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = '#fbc02d';
+      ctx.stroke();
+
+      // Eğer top çekiliyorsa niş çizgisi
+      if (isDragging && !ball.shot) {
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(ball.x, ball.y);
+        ctx.lineTo(currentMousePos.x, currentMousePos.y);
+        ctx.stroke();
+      }
+    }
+
+    // Oyun döngüsü ve fizik güncellemesi
+    function update() {
+      if (ball.shot) {
+        // Basit fizik: yerçekimi
+        ball.vy += 0.3;
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        // Zemin (alt sınır) kontrolü: top yere çarparsa zıplar
+        if (ball.y + ball.radius > canvas.height) {
+          ball.y = canvas.height - ball.radius;
+          ball.vy *= -0.6;
+          ball.vx *= 0.8;
+          if (Math.abs(ball.vy) < 1) ball.vy = 0;
+        }
+        // Yan duvar kontrolü
+        if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
+          ball.vx *= -1;
+        }
+
+        // Gol kontrolü: top kale çizgisinin altına girerse
+        if (ball.y - ball.radius < goal.y + goal.height && ball.x > goal.x && ball.x < goal.x + goal.width) {
+          if (!checkGoalkeeperCollision()) {
+            messageDisplay.textContent = "GOOOL!";
+            goals++;
+            endShot();
+            return;
+          }
+        }
+        // Top ekranın üstünden çıkarsa kaçırmış sayılır
+        if (ball.y + ball.radius < 0) {
+          messageDisplay.textContent = "Kaçırdın!";
+          endShot();
+          return;
+        }
+        // Kaleci ile çarpışma kontrolü
+        if (checkGoalkeeperCollision()) {
+          messageDisplay.textContent = "Kaydetti!";
+          endShot();
+          return;
+        }
+      }
+
+      // Kaleciyi güncelle (kalede belirlenen sınırlar içinde hareket)
+      updateGoalkeeper();
+
+      drawField();
+      if (!gameOver) requestAnimationFrame(update);
+    }
+
+    // Kaleci hareket algoritması: kalenin sınırları içerisinde ileri-geri hareket
+    function updateGoalkeeper() {
+      goalkeeper.x += goalkeeper.vx * goalkeeper.direction;
+      const leftBound = goal.x;
+      const rightBound = goal.x + goal.width - goalkeeper.width;
+      if (goalkeeper.x < leftBound) {
+        goalkeeper.x = leftBound;
+        goalkeeper.direction = 1;
+      } else if (goalkeeper.x > rightBound) {
+        goalkeeper.x = rightBound;
+        goalkeeper.direction = -1;
+      }
+    }
+
+    // Top ile kaleci arasındaki çarpışmayı dairesel-çevresel hesaplama ile kontrol et
+    function checkGoalkeeperCollision() {
+      const distX = Math.abs(ball.x - (goalkeeper.x + goalkeeper.width / 2));
+      const distY = Math.abs(ball.y - (goalkeeper.y + goalkeeper.height / 2));
+
+      if (distX > (goalkeeper.width / 2 + ball.radius)) return false;
+      if (distY > (goalkeeper.height / 2 + ball.radius)) return false;
+
+      if (distX <= (goalkeeper.width / 2)) return true;
+      if (distY <= (goalkeeper.height / 2)) return true;
+
+      const dx = distX - goalkeeper.width / 2;
+      const dy = distY - goalkeeper.height / 2;
+      return (dx * dx + dy * dy <= ball.radius * ball.radius);
+    }
+
+    // Fare olayları: mousedown, mousemove ve mouseup
+    canvas.addEventListener('mousedown', (e) => {
+      if (ball.shot) return;
+      const pos = getMousePos(e);
+      const dx = pos.x - ball.x;
+      const dy = pos.y - ball.y;
+      if (Math.sqrt(dx * dx + dy * dy) <= ball.radius + 5) {
+        isDragging = true;
+        dragStart = { x: ball.x, y: ball.y };
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      currentMousePos = getMousePos(e);
+    });
+
+    canvas.addEventListener('mouseup', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      const dragEnd = getMousePos(e);
+      const dx = dragStart.x - dragEnd.x;
+      const dy = dragStart.y - dragEnd.y;
+      ball.vx = dx * 0.15;
+      ball.vy = dy * 0.15;
+      ball.shot = true;
+    });
+
+    function getMousePos(evt) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top
+      };
+    }
+
+    // Atış tamamlandığında yapılacaklar: skora ekle, mesaj göster ve "Sonraki Atış" butonunu aktif et
+    function endShot() {
+      ball.shot = false;
+      attempts++;
+      updateScoreboard();
+      nextShotBtn.style.display = "inline-block";
+      if (attempts >= maxAttempts) {
+        gameOver = true;
+        messageDisplay.textContent += " Oyun Bitti!";
+        resetGameBtn.style.display = "inline-block";
+      }
+    }
+
+    // Bir sonraki atışa hazırlanma: top ve kaleciyi resetle, mesajı temizle
+    function nextShot() {
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height - 50;
+      ball.vx = 0;
+      ball.vy = 0;
+      ball.shot = false;
+      messageDisplay.textContent = "";
+      nextShotBtn.style.display = "none";
+      // Kaleciyi yeniden merkeze al, rastgele hareket yönü ata
+      goalkeeper.x = canvas.width / 2 - goalkeeper.width / 2;
+      goalkeeper.direction = Math.random() < 0.5 ? 1 : -1;
+      if (!gameOver) requestAnimationFrame(update);
+    }
+
+    // Skor ve atış bilgisini güncelle
+    function updateScoreboard() {
+      attemptsDisplay.textContent = attempts;
+      goalsDisplay.textContent = goals;
+    }
+
+    nextShotBtn.addEventListener('click', nextShot);
+    resetGameBtn.addEventListener('click', () => {
+      attempts = 0;
+      goals = 0;
+      gameOver = false;
+      updateScoreboard();
+      messageDisplay.textContent = "";
+      resetGameBtn.style.display = "none";
+      nextShot();
+    });
+
+    // Oyun döngüsünü başlat
+    update();
+  </script>
+</body>
+</html>
