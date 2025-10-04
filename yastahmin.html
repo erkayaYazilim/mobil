@@ -2,28 +2,23 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Panel - 2Futbolcu Yönetimi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yaş Oyunu – Admin</title>
   <style>
-    body { font-family: Arial, sans-serif; background:#f4f4f4; margin:0; padding:20px; }
-    .container { max-width: 700px; margin:auto; background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,.08); }
-    h1 { text-align:center; margin:0 0 12px; }
-    nav { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-    nav a { font-size:14px; color:#6200EE; text-decoration:none; }
-    nav a:hover { text-decoration:underline; }
-    form { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
-    input[type="text"], input[type="number"], input[type="email"], input[type="password"], input[type="file"] { padding:8px; border:1px solid #ccc; border-radius:4px; }
-    button { padding:10px; border:none; border-radius:4px; cursor:pointer; }
-    .primary { background:#28a745; color:#fff; }
-    .primary:disabled { background:#94d3a2; cursor:not-allowed; }
-    .danger { background:#dc3545; color:#fff; }
-    .status { text-align:center; margin-top:8px; color:#333; min-height: 20px; }
-    .player-list { display:flex; flex-direction:column; gap:10px; }
-    .player-item { display:flex; align-items:center; gap:10px; padding:10px; background:#fafafa; border:1px solid #ddd; border-radius:6px; }
-    .player-item img { width:60px; height:60px; object-fit:cover; border-radius:50%; }
-    .row { display:flex; gap:8px; align-items:center; }
-    .muted { color:#666; font-size:13px; }
-    .hidden { display:none; }
+    body{font-family:Arial, sans-serif;background:#f4f4f4;margin:0;padding:20px}
+    .container{max-width:720px;margin:auto;background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+    h1{margin:0 0 12px;text-align:center}
+    nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+    nav a{font-size:14px;color:#6200EE;text-decoration:none}
+    nav a:hover{text-decoration:underline}
+    form{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+    input[type="text"],input[type="number"],input[type="email"],input[type="password"],input[type="file"]{padding:8px;border:1px solid #ccc;border-radius:4px}
+    button{padding:10px;border:none;border-radius:4px;cursor:pointer}
+    .primary{background:#28a745;color:#fff}
+    .primary:disabled{background:#94d3a2;cursor:not-allowed}
+    .danger{background:#dc3545;color:#fff}
+    .status{text-align:center;margin-top:8px;color:#333;min-height:20px}
+    .hidden{display:none}
   </style>
 
   <!-- Firebase compat SDK'lar -->
@@ -31,12 +26,12 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-  <!-- App Check gerekiyorsa aç -->
+  <!-- App Check ENFORCED ise aç ve kendi site key'ini yaz -->
   <!-- <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-check-compat.js"></script> -->
 </head>
 <body>
   <div class="container">
-    <h1>Futbolcu Yönetim Paneli</h1>
+    <h1>Yaş Oyunu – Admin</h1>
 
     <nav>
       <a href="main.html">Ana Sayfa</a>
@@ -59,30 +54,35 @@
         <input type="password" id="password" placeholder="Şifre" required />
         <button type="submit" class="primary">Giriş Yap</button>
       </form>
-      <div class="muted">Bu sayfayı görmek için e-posta/şifre ile oturum gerekli.</div>
+      <div style="color:#666;font-size:13px">Bu sayfayı kullanmak için e-posta/şifre ile giriş yap.</div>
     </div>
 
-    <!-- UYGULAMA BLOĞU (yalnızca oturum varken görünür) -->
+    <!-- UYGULAMA BLOĞU -->
     <div id="appBox" class="hidden">
-      <div class="row" style="justify-content: space-between;">
-        <div class="muted" id="whoami"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div id="whoami" style="color:#666;font-size:13px"></div>
         <button id="logoutBtn" class="danger">Çıkış Yap</button>
       </div>
 
       <form id="playerForm">
-        <label>Fotoğraf:<input type="file" id="photo" accept="image/*" required></label>
-        <label>Ad Soyad:<input type="text" id="name" placeholder="Futbolcu Adı" required></label>
-        <label>Doğum Yılı:<input type="number" id="year" placeholder="YYYY" min="1900" max="2025" required></label>
+        <label>Fotoğraf:
+          <input type="file" id="photo" accept="image/*" required>
+        </label>
+        <label>Ad Soyad:
+          <input type="text" id="name" placeholder="Futbolcu Adı" required>
+        </label>
+        <label>Doğum Yılı:
+          <input type="number" id="year" placeholder="YYYY" min="1900" max="2025" required>
+        </label>
         <button type="submit" id="submitBtn" class="primary" disabled>Ekle</button>
       </form>
 
       <div class="status" id="status"></div>
-      <div class="player-list" id="playerList"></div>
     </div>
   </div>
 
   <script>
-    // ---------- Firebase init ----------
+    // ---- Firebase init (TÜM sayfalarda AYNI config) ----
     const firebaseConfig = {
       apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
       authDomain: "futbolmobil-7be36.firebaseapp.com",
@@ -95,44 +95,40 @@
     };
     firebase.initializeApp(firebaseConfig);
 
-    // App Check ENFORCED ise şunu AÇ (reCAPTCHA v3 site key'ini yaz):
+    // App Check ENFORCED ise şunu AÇ (reCAPTCHA v3 site key'inle):
     // firebase.appCheck().activate('RECAPTCHA_V3_SITE_KEY', true);
 
     const auth = firebase.auth();
     const storage = firebase.storage();
-    const database = firebase.database();
+    const db = firebase.database();
 
-    // ---------- UI elemanları ----------
-    const authBox   = document.getElementById('authBox');
-    const appBox    = document.getElementById('appBox');
+    // ---- UI refs ----
+    const authBox = document.getElementById('authBox');
+    const appBox  = document.getElementById('appBox');
     const loginForm = document.getElementById('loginForm');
-    const emailEl   = document.getElementById('email');
-    const passEl    = document.getElementById('password');
-    const whoamiEl  = document.getElementById('whoami');
+    const emailEl = document.getElementById('email');
+    const passEl  = document.getElementById('password');
+    const whoami  = document.getElementById('whoami');
     const logoutBtn = document.getElementById('logoutBtn');
 
-    const form       = document.getElementById('playerForm');
-    const statusEl   = document.getElementById('status');
-    const playerList = document.getElementById('playerList');
-    const submitBtn  = document.getElementById('submitBtn');
+    const form     = document.getElementById('playerForm');
+    const statusEl = document.getElementById('status');
+    const submitBtn= document.getElementById('submitBtn');
 
-    // ---------- Auth davranışı ----------
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        // Giriş var → app aç
+    // ---- Auth flow ----
+    auth.onAuthStateChanged(u => {
+      if (u) {
         authBox.classList.add('hidden');
         appBox.classList.remove('hidden');
-        whoamiEl.textContent = `Giriş: ${user.email || user.uid}`;
+        whoami.textContent = 'Giriş: ' + (u.email || u.uid);
         submitBtn.disabled = false;
-        loadPlayers();
       } else {
-        // Giriş yok → login göster
         appBox.classList.add('hidden');
         authBox.classList.remove('hidden');
       }
     });
 
-    loginForm.addEventListener('submit', async (e) => {
+    loginForm.addEventListener('submit', async (e)=>{
       e.preventDefault();
       try {
         await auth.signInWithEmailAndPassword(emailEl.value, passEl.value);
@@ -141,23 +137,24 @@
       }
     });
 
-    logoutBtn.addEventListener('click', () =>
-      auth.signOut().catch(e => alert('Çıkış hatası: ' + (e.message || e.code)))
-    );
+    logoutBtn.addEventListener('click', ()=> auth.signOut());
 
-    // ---------- Görseli sıkıştır (jpeg, kalite %10) ----------
+    // ---- Görseli sıkıştır (jpeg, kalite %10) ----
     function compressImage(file) {
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          canvas.width  = img.width;
+          canvas.width = img.width;
           canvas.height = img.height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0);
           canvas.toBlob(blob => {
             if (blob) {
-              const out = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
+              const out = new File([blob],
+                (file.name || 'foto').replace(/\.[^.]+$/,'') + '.jpg',
+                { type: 'image/jpeg' }
+              );
               resolve(out);
             } else reject(new Error('Blob oluşmadı'));
           }, 'image/jpeg', 0.1);
@@ -167,85 +164,46 @@
       });
     }
 
-    // ---------- Upload + RTDB kayıt ----------
-    form.addEventListener('submit', async e => {
+    // ---- Upload + RTDB kayıt ----
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       submitBtn.disabled = true;
       statusEl.textContent = 'Yükleniyor...';
 
-      const file = document.getElementById('photo').files[0];
-      const name = document.getElementById('name').value.trim();
-      const year = document.getElementById('year').value;
-
       try {
+        const file = document.getElementById('photo').files[0];
+        const name = document.getElementById('name').value.trim();
+        const year = document.getElementById('year').value;
+
         if (!file) throw new Error('Dosya seçilmedi');
+        if (!auth.currentUser) throw new Error('Oturum yok');
 
-        // Türkçe karakterleri sadeleştir (opsiyonel ama faydalı)
-        const safeName = (file.name || 'foto').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'_');
+        // dosya adı sadeleştir (balık -> balik)
+        const safeBase = (file.name || 'foto')
+          .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+          .replace(/\s+/g,'_').replace(/\.[^.]+$/,'');
+        const imgFile = await compressImage(file);
 
-        const imgFile    = await compressImage(file);
-        const path       = 'players/' + Date.now() + '_' + safeName.replace(/\.[^.]+$/, '.jpg');
-        const storageRef = storage.ref(path);
+        const path = `players/${Date.now()}_${safeBase}.jpg`;
+        const ref  = storage.ref(path);
 
-        const snap = await storageRef.put(imgFile, { contentType: imgFile.type });
-        const photoURL = await snap.ref.getDownloadURL();
+        const snap = await ref.put(imgFile, { contentType: imgFile.type });
+        const url  = await snap.ref.getDownloadURL();
 
-        const newRef = database.ref('players').push();
-        await newRef.set({ name, year, photoUrl: photoURL, path, createdAt: Date.now() });
+        // Yaş oyunu kayıtlarını nereye tutuyorsan oraya yaz
+        const rec = { name, year, photoUrl: url, path, createdAt: Date.now(), by: auth.currentUser.uid };
+        await db.ref('players').push(rec);
 
-        statusEl.textContent = 'Oyuncu başarıyla eklendi.';
+        statusEl.textContent = 'Yükleme tamam ✓';
         form.reset();
       } catch (err) {
         console.error(err);
         statusEl.textContent = 'Hata: ' + (err.message || err.code);
+        // Preflight 403 ise tarayıcı CORS gibi yazar → genelde auth/rules/app-check kaynaklıdır.
       } finally {
         submitBtn.disabled = false;
       }
     });
-
-    // ---------- Listele + Sil ----------
-    function loadPlayers() {
-      database.ref('players').on('value', snapshot => {
-        playerList.innerHTML = '';
-        snapshot.forEach(child => {
-          const data = child.val();
-          const key  = child.key;
-
-          const item = document.createElement('div');
-          item.className = 'player-item';
-
-          const img = document.createElement('img');
-          img.src = data.photoUrl;
-
-          const info = document.createElement('div');
-          info.className = 'player-info';
-          info.innerHTML = `<strong>${data.name}</strong><br><span class="muted">Doğum Yılı: ${data.year}</span>`;
-
-          const delBtn = document.createElement('button');
-          delBtn.className = 'danger';
-          delBtn.textContent = 'Sil';
-          delBtn.onclick = async () => {
-            if (!confirm('Silinsin mi?')) return;
-            try {
-              await database.ref('players/' + key).remove();
-              if (data.path) {
-                await storage.ref(data.path).delete();
-              } else if (data.photoUrl) {
-                await storage.refFromURL(data.photoUrl).delete();
-              }
-            } catch (e) {
-              alert('Silme hatası: ' + (e.message || e.code));
-            }
-          };
-
-          item.appendChild(img);
-          item.appendChild(info);
-          item.appendChild(delBtn);
-          playerList.appendChild(item);
-        });
-      });
-    }
   </script>
 </body>
 </html>
-
