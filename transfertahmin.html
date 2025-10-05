@@ -65,9 +65,10 @@
     }
   </style>
   <!-- Firebase Compat SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+ <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
 <body>
   <div class="container">
@@ -107,15 +108,15 @@
 
   <script>
     // Firebase yapılandırması
-    const firebaseConfig = {
+     const firebaseConfig = {
       apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
       authDomain: "futbolmobil-7be36.firebaseapp.com",
       databaseURL: "https://futbolmobil-7be36-default-rtdb.firebaseio.com",
       projectId: "futbolmobil-7be36",
-      storageBucket: "futbolmobil-7be36.appspot.com",
+      storageBucket: "futbolmobil-7be36.firebasestorage.app",
       messagingSenderId: "311578958726",
-      appId: "1:311578958726:web:61866a189b73ba95af2a07",
-      measurementId: "G-5837EDDD26"
+      appId: "1:311578958726:web:486cb815a7674702af2a07",
+      measurementId: "G-NE0LTTF1EP"
     };
     firebase.initializeApp(firebaseConfig);
 

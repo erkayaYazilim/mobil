@@ -1,203 +1,162 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Yaş Oyunu – Admin</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel - Futbolcu Yönetimi</title>
   <style>
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:Arial, sans-serif;background:#f4f4f4;color:#333;line-height:1.6;padding:15px}
-    header{background:#008577;color:#fff;padding:15px;text-align:center}
-    nav{background:#eee;padding:10px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
-    nav a{padding:8px 12px;text-decoration:none;border-radius:4px;background:#ccc;color:#000;font-weight:bold}
-    nav a:hover{background:#bbb}
-    .container{max-width:600px;width:95%;background:#fff;margin:20px auto;padding:20px;border-radius:5px;box-shadow:0 2px 5px rgba(0,0,0,.2)}
-    h2{margin-bottom:14px}
-    label{display:block;margin:10px 0 6px;color:#555}
-    input[type="text"],input[type="number"],textarea{width:100%;padding:10px;font-size:16px;border:1px solid #ccc;border-radius:3px}
-    input[type="file"]{margin:10px 0}
-    button{padding:12px;margin-top:16px;background:#28a745;color:#fff;border:none;border-radius:3px;font-size:16px;cursor:pointer}
-    button:disabled{opacity:.6;cursor:not-allowed}
-    .status{margin-top:12px;text-align:center;color:#333;min-height:20px}
-    .preview{margin-top:10px;text-align:center}
-    .preview img{max-width:100%;border-radius:5px}
-    @media (max-width:600px){input,textarea{font-size:14px}button{font-size:14px;padding:10px}}
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 5px;
+                 box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    h1 { text-align: center; }
+    nav a { margin-right: 8px; font-size: 14px; color: #6200EE; text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+    form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    input[type="text"], input[type="number"], input[type="file"] {
+      padding: 8px; border: 1px solid #ccc; border-radius: 3px; }
+    button[type="submit"] { padding: 10px; background: #28a745; color: #fff; border: none;
+                              border-radius: 3px; cursor: pointer; }
+    button[type="submit"]:hover { background: #218838; }
+    .status { text-align: center; margin-top: 12px; color: #333; }
+    .player-list { display: flex; flex-direction: column; gap: 10px; }
+    .player-item { display: flex; align-items: center; gap: 10px; padding: 10px;
+                   background: #fafafa; border: 1px solid #ddd; border-radius: 3px; }
+    .player-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 50%; }
+    .player-info { flex-grow: 1; }
+    .delete-btn { padding: 5px 10px; background: #dc3545; color: #fff; border: none;
+                  border-radius: 3px; cursor: pointer; }
+    .delete-btn:hover { background: #c82333; }
   </style>
-
-  <!-- Firebase v8 (ödül sayfası ile aynı mantık) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
-  <header><h1>Yaş Oyunu – Admin</h1></header>
-
-  <nav>
-    <a href="main.html">Ana Sayfa</a>
-    <a href="question.html">Soru Yükle</a>
-    <a href="approve.html">Blog Onay Paneli</a>
-    <a href="upload.html">Blog Yükle</a>
-    <a href="editQuestions.html">Soru Düzenle</a>
-    <a href="blockedUsers.html">Engellenenler</a>
-    <a href="odulYukle.html">Ödül Yükle</a>
-    <a href="odulDuzenle.html">Ödülleri Düzenle</a>
-    <a href="odulAlanlar.html">Ödül Alanlar</a>
-    <a href="yastahmin.html">Yaş Oyunu</a>
-    <a href="transfertahmin.html">Transfer Oyunu</a>
-    <a href="puzlle.html">Puzzle Oyunu</a>
-    <a href="futbolcubil.html">Futbolcu Bil</a>
-  </nav>
-
   <div class="container">
-    <h2>Oyuncu Ekle</h2>
+    <h1>Futbolcu Yönetim Paneli</h1>
+    <nav>
+      <a href="main.html">Ana Sayfa</a>
+      <a href="question.html">Soru Yükle</a>
+      <a href="approve.html">Onay Paneli</a>
+      <a href="upload.html">Blog Yükle</a>
+      <a href="editQuestions.html">Soru Düzenle</a>
+      <a href="blockedUsers.html">Engellenenler</a>
+      <a href="yastahmin.html">Yaş Oyunu</a>
+      <a href="transfertahmin.html">Transfer Oyunu</a>
+      <a href="puzlle.html">Puzzle Oyunu</a>
+      <a href="futbolcubil.html">Futbolcu Bil</a>
+    </nav>
     <form id="playerForm">
-      <label for="photo">Fotoğraf:</label>
-      <input type="file" id="photo" accept="image/*" required>
-      <div id="preview" class="preview"></div>
-
-      <label for="name">Ad Soyad:</label>
-      <input type="text" id="name" placeholder="Futbolcu Adı" required>
-
-      <label for="year">Doğum Yılı:</label>
-      <input type="number" id="year" placeholder="YYYY" min="1900" max="2025" required>
-
-      <button type="submit" id="submitBtn" disabled>Kaydet</button>
+      <label>Fotoğraf:<input type="file" id="photo" accept="image/*" required></label>
+      <label>Ad Soyad:<input type="text" id="name" placeholder="Futbolcu Adı" required></label>
+      <label>Doğum Yılı:<input type="number" id="year" placeholder="YYYY" min="1900" max="2025" required></label>
+      <button type="submit">Ekle</button>
     </form>
-    <div id="status" class="status"></div>
+    <div class="status" id="status"></div>
+    <div class="player-list" id="playerList"></div>
   </div>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <script>
-    // === Firebase config (appspot.com DIKKAT) ===
     const firebaseConfig = {
       apiKey: "AIzaSyDbxMYDAd2AI1riU9kcPG6K2LT_lB1TR8s",
       authDomain: "futbolmobil-7be36.firebaseapp.com",
       databaseURL: "https://futbolmobil-7be36-default-rtdb.firebaseio.com",
       projectId: "futbolmobil-7be36",
-      storageBucket: "futbolmobil-7be36.appspot.com",
+      storageBucket: "futbolmobil-7be36.firebasestorage.app",
       messagingSenderId: "311578958726",
       appId: "1:311578958726:web:486cb815a7674702af2a07",
       measurementId: "G-NE0LTTF1EP"
     };
     firebase.initializeApp(firebaseConfig);
+    const storage  = firebase.storage();
+    const database = firebase.database();
 
-    const auth = firebase.auth();
-    const storage = firebase.storage();
-    const db = firebase.database();
+    const form       = document.getElementById('playerForm');
+    const statusEl   = document.getElementById('status');
+    const playerList = document.getElementById('playerList');
 
-    // === Giriş kontrolü (ödül sayfasıyla aynı): giriş yoksa index.html'e yönlendir ===
-    auth.onAuthStateChanged(user => {
-      const btn = document.getElementById('submitBtn');
-      if (!user) {
-        window.location.href = "index.html";
-      } else {
-        btn.disabled = false;
-      }
-    });
-
-    // === Önizleme ===
-    const photoInput = document.getElementById('photo');
-    const previewDiv = document.getElementById('preview');
-    photoInput.addEventListener('change', function () {
-      const f = this.files[0];
-      if (!f) return (previewDiv.innerHTML = '');
-      const reader = new FileReader();
-      reader.onload = e => previewDiv.innerHTML = `<img src="${e.target.result}" alt="Önizleme">`;
-      reader.readAsDataURL(f);
-    });
-
-    // === Görseli sıkıştır (JPEG 0.7, genişlik 600 px) ===
+    // Görsel sıkıştırma (en düşük kalite)
     function compressImage(file) {
       return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = ev => {
-          const img = new Image();
-          img.src = ev.target.result;
-          img.onload = () => {
-            const MAX_W = 600;
-            let w = img.width, h = img.height;
-            if (w > MAX_W) { h = Math.round(h * (MAX_W / w)); w = MAX_W; }
-            const canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-            canvas.toBlob(b => {
-              if (!b) return reject(new Error('Blob oluşmadı'));
-              resolve(b);
-            }, 'image/jpeg', 0.7);
-          };
-          img.onerror = reject;
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width  = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob(blob => {
+            if (blob) resolve(blob);
+            else reject(new Error('Blob oluşmadı'));
+          }, 'image/jpeg', 0.1); // kalite %10
         };
-        reader.onerror = reject;
+        img.onerror = e => reject(e);
+        img.src = URL.createObjectURL(file);
       });
     }
 
-    // === Dosya adı normalize (Türkçe karakterleri sadeleştir) ===
-    function safeName(originalName) {
-      const base = (originalName || 'foto')
-        .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // aksanları sil
-        .replace(/\s+/g,'_');                            // boşlukları _
-      return base.replace(/[^\w.\-]/g, '');              // güvenli karakter seti
-    }
-
-    // === Form gönderimi (ödül mantığıyla bire bir) ===
-    const form = document.getElementById('playerForm');
-    const statusEl = document.getElementById('status');
-    const submitBtn = document.getElementById('submitBtn');
-
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', async e => {
       e.preventDefault();
-      submitBtn.disabled = true;
       statusEl.textContent = 'Yükleniyor...';
 
+      const file = document.getElementById('photo').files[0];
+      const name = document.getElementById('name').value.trim();
+      const year = document.getElementById('year').value;
+
       try {
-        const file = photoInput.files[0];
-        const name = document.getElementById('name').value.trim();
-        const year = parseInt(document.getElementById('year').value, 10);
+        const blob       = await compressImage(file);
+        const storageRef = storage.ref('players/' + Date.now() + '_' + file.name);
+        const snap       = await storageRef.put(blob);
+        const photoURL   = await snap.ref.getDownloadURL();
 
-        if (!file || !name || isNaN(year)) {
-          throw new Error('Lütfen tüm alanları doldurun.');
-        }
-        if (!auth.currentUser) {
-          throw new Error('Oturum bulunamadı (giriş yapın).');
-        }
+        const newKey = database.ref('players').push().key;
+        await database.ref('players/' + newKey).set({ name, year, photoUrl: photoURL });
 
-        // 1) Görseli sıkıştır
-        const blob = await compressImage(file);
-
-        // 2) Storage yolunu belirle (players/)
-        const norm = safeName(file.name).replace(/\.[^.]+$/, '') + '.jpg';
-        const path = 'players/' + Date.now() + '_' + norm;
-
-        // 3) Storage'a yükle (SDK, CORS & header'ları halleder)
-        const fileRef = storage.ref().child(path);
-        const snap = await fileRef.put(blob, { contentType: 'image/jpeg' });
-
-        // 4) Download URL al
-        const downloadURL = await snap.ref.getDownloadURL();
-
-        // 5) RTDB'ye yaz
-        const rec = {
-          name: name,
-          year: year,
-          photoUrl: downloadURL,
-          path: path,
-          createdAt: Date.now(),
-          by: auth.currentUser.uid
-        };
-        await db.ref('players').push(rec);
-
-        statusEl.textContent = 'Oyuncu başarıyla eklendi!';
+        statusEl.textContent = 'Oyuncu başarıyla eklendi.';
         form.reset();
-        previewDiv.innerHTML = '';
       } catch (err) {
         console.error(err);
-        statusEl.textContent = 'Hata: ' + (err.message || err.code);
-      } finally {
-        submitBtn.disabled = false;
+        statusEl.textContent = 'Hata: ' + err.message;
       }
     });
+
+    function loadPlayers() {
+      database.ref('players').on('value', snapshot => {
+        playerList.innerHTML = '';
+        snapshot.forEach(child => {
+          const data = child.val();
+          const key  = child.key;
+
+          const item = document.createElement('div');
+          item.className = 'player-item';
+
+          const img = document.createElement('img');
+          img.src = data.photoUrl;
+
+          const info = document.createElement('div');
+          info.className = 'player-info';
+          info.innerHTML = `<strong>${data.name}</strong><br>Doğum Yılı: ${data.year}`;
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'delete-btn';
+          delBtn.textContent = 'Sil';
+          delBtn.onclick = () => {
+            if (!confirm('Silinsin mi?')) return;
+            database.ref('players/' + key).remove();
+            storage.refFromURL(data.photoUrl).delete();
+          };
+
+          item.appendChild(img);
+          item.appendChild(info);
+          item.appendChild(delBtn);
+          playerList.appendChild(item);
+        });
+      });
+    }
+
+    window.onload = loadPlayers;
   </script>
 </body>
 </html>
